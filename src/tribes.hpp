@@ -1,0 +1,124 @@
+#pragma once
+
+#include "names.hpp"
+
+enum class tribe { none, mech, beast, demon, murloc, dragon };
+
+inline auto get_tribe(name const& name) -> tribe {
+	switch (name) {
+		default:
+		case name::baron_rivendare:
+		case name::bolvar_fireblood:
+		case name::brann_bronzebeard:
+		case name::crowd_favorite:
+		case name::crystal_weaver:
+		case name::defender_of_argus:
+		case name::finkle_einhorn:
+		case name::houndmaster:
+		case name::kangors_apprentice:
+		case name::khadgar:
+		case name::lightfang_enforcer:
+		case name::menagerie_magician:
+		case name::nadina_the_red:
+		case name::pack_leader:
+		case name::plant:
+		case name::righteous_protector:
+		case name::selfless_hero:
+		case name::shifter_zerus:
+		case name::soul_juggler:
+		case name::spawn_of_nzoth:
+		case name::strongshell_scavenger:
+		case name::unstable_ghoul:
+		case name::virmen_sensei:
+		case name::waxrider_togwaggle:
+		case name::wrath_weaver:
+		case name::zapp_slywick:
+			return tribe::none;
+		case name::annoy_o_module:
+		case name::damaged_golem:
+		case name::foe_reaper_4000:
+		case name::guard_bot:
+		case name::harvest_golem:
+		case name::iron_sensei:
+		case name::jo_e_bot:
+		case name::junkbot:
+		case name::kaboom_bot:
+		case name::mechano_egg:
+		case name::mecharoo:
+		case name::metaltooth_leaper:
+		case name::micro_machine:
+		case name::microbot:
+		case name::piloted_shredder:
+		case name::pogo_hopper:
+		case name::robosaur:
+		case name::replicating_menace:
+		case name::screwjank_clunker:
+		case name::security_rover:
+		case name::sneeds_old_shredder:
+		case name::zoobot:
+			return tribe::mech;
+		case name::alleycat:
+		case name::big_bad_wolf:
+		case name::cave_hydra:
+		case name::dire_wolf_alpha:
+		case name::gentle_megasaur:
+		case name::ghastcoiler:
+		case name::goldrinn_the_great_wolf:
+		case name::hyena:
+		case name::infested_wolf:
+		case name::ironhide_direhorn:
+		case name::ironhide_runt:
+		case name::kindly_grandmother:
+		case name::maexxna:
+		case name::mama_bear:
+		case name::rat:
+		case name::rat_pack:
+		case name::savannah_highmane:
+		case name::scavenging_hyena:
+		case name::spider:
+		case name::tabbycat:
+		case name::the_beast:
+			return tribe::beast;
+		case name::annihilan_battlemaster:
+		case name::fiendish_servant:
+		case name::floating_watcher:
+		case name::imp:
+		case name::imp_gang_boss:
+		case name::imp_mama:
+		case name::imprisoner:
+		case name::malganis:
+		case name::nathrezim_overseer:
+		case name::siegebreaker:
+		case name::voidlord:
+		case name::voidwalker:
+		case name::vulgar_homunculus:
+			return tribe::demon;
+		case name::coldlight_seer:
+		case name::holy_mackerel:
+		case name::king_bagurgle:
+		case name::murloc_scout:
+		case name::murloc_tidecaller:
+		case name::murloc_tidehunter:
+		case name::murloc_warleader:
+		case name::old_murk_eye:
+		case name::primalfin_lookout:
+		case name::rockpool_hunter:
+		case name::toxfin:
+			return tribe::murloc;
+		case name::bronze_warden:
+		case name::cobalt_guardian:
+		case name::cobalt_scalebane:
+		case name::dragonspawn_lieutenant:
+		case name::drakonid_enforcer:
+		case name::glyph_guardian:
+		case name::hangry_dragon:
+		case name::herald_of_flame:
+		case name::kalecgos_arcane_aspect:
+		case name::murozond:
+		case name::razoregore_the_untamed:
+		case name::red_whelp:
+		case name::steward_of_time:
+		case name::twilight_emissary:
+			return tribe::dragon;
+	}
+}

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{82c7c2cf-88b6-4243-9a2d-c8b4dba99bdf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\hs-bg-sim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\tiers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\names.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tribes.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\minion.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\board.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

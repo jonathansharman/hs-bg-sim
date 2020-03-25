@@ -1,0 +1,124 @@
+#pragma once
+
+#include "names.hpp"
+
+enum class tier : int { one = 1, two, three, four, five, six };
+
+inline auto get_tier(name const& name) -> tier {
+	switch (name) {
+		default:
+		case name::alleycat:
+		case name::dire_wolf_alpha:
+		case name::dragonspawn_lieutenant:
+		case name::fiendish_servant:
+		case name::vulgar_homunculus:
+		case name::mecharoo:
+		case name::micro_machine:
+		case name::murloc_tidecaller:
+		case name::murloc_tidehunter:
+		case name::red_whelp:
+		case name::rockpool_hunter:
+		case name::righteous_protector:
+		case name::selfless_hero:
+		case name::wrath_weaver:
+		case name::big_bad_wolf:
+		case name::damaged_golem:
+		case name::finkle_einhorn:
+		case name::guard_bot:
+		case name::hyena:
+		case name::imp:
+		case name::ironhide_runt:
+		case name::jo_e_bot:
+		case name::microbot:
+		case name::murloc_scout:
+		case name::plant:
+		case name::rat:
+		case name::robosaur:
+		case name::spider:
+		case name::tabbycat:
+		case name::voidwalker:
+			return tier::one;
+		case name::glyph_guardian:
+		case name::harvest_golem:
+		case name::imprisoner:
+		case name::kaboom_bot:
+		case name::kindly_grandmother:
+		case name::metaltooth_leaper:
+		case name::murloc_warleader:
+		case name::nathrezim_overseer:
+		case name::old_murk_eye:
+		case name::pogo_hopper:
+		case name::rat_pack:
+		case name::scavenging_hyena:
+		case name::spawn_of_nzoth:
+		case name::steward_of_time:
+		case name::unstable_ghoul:
+		case name::waxrider_togwaggle:
+		case name::zoobot:
+			return tier::two;
+		case name::bronze_warden:
+		case name::cobalt_guardian:
+		case name::coldlight_seer:
+		case name::crowd_favorite:
+		case name::crystal_weaver:
+		case name::hangry_dragon:
+		case name::houndmaster:
+		case name::imp_gang_boss:
+		case name::infested_wolf:
+		case name::khadgar:
+		case name::pack_leader:
+		case name::piloted_shredder:
+		case name::replicating_menace:
+		case name::screwjank_clunker:
+		case name::shifter_zerus:
+		case name::soul_juggler:
+		case name::the_beast:
+		case name::twilight_emissary:
+			return tier::four;
+		case name::annoy_o_module:
+		case name::bolvar_fireblood:
+		case name::cave_hydra:
+		case name::cobalt_scalebane:
+		case name::defender_of_argus:
+		case name::drakonid_enforcer:
+		case name::floating_watcher:
+		case name::herald_of_flame:
+		case name::iron_sensei:
+		case name::mechano_egg:
+		case name::menagerie_magician:
+		case name::savannah_highmane:
+		case name::security_rover:
+		case name::siegebreaker:
+		case name::toxfin:
+		case name::virmen_sensei:
+			return tier::three;
+		case name::annihilan_battlemaster:
+		case name::baron_rivendare:
+		case name::brann_bronzebeard:
+		case name::goldrinn_the_great_wolf:
+		case name::ironhide_direhorn:
+		case name::junkbot:
+		case name::king_bagurgle:
+		case name::lightfang_enforcer:
+		case name::malganis:
+		case name::murozond:
+		case name::primalfin_lookout:
+		case name::razoregore_the_untamed:
+		case name::sneeds_old_shredder:
+		case name::strongshell_scavenger:
+		case name::voidlord:
+			return tier::five;
+		case name::foe_reaper_4000:
+		case name::gentle_megasaur:
+		case name::ghastcoiler:
+		case name::holy_mackerel:
+		case name::imp_mama:
+		case name::kangors_apprentice:
+		case name::kalecgos_arcane_aspect:
+		case name::maexxna:
+		case name::mama_bear:
+		case name::nadina_the_red:
+		case name::zapp_slywick:
+			return tier::six;
+	}
+}
