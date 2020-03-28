@@ -651,9 +651,11 @@ namespace hsbg {
 						case id::malganis:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
 								if (ally != it && get_tribe(*ally) == tribe::demon) {
+									// Reduce attack and max health.
 									ally->stats.attack = std::max(0, ally->stats.attack - 2);
-									/// @todo The loss of health buffs needs to account for damage taken.
-									ally->stats.health = std::max(1, ally->stats.health - 2);
+									ally->stats.max_health -= 2;
+									// Only reduce current health if above new maximum.
+									ally->stats.health = std::min(ally->stats.health, ally->stats.max_health);
 								}
 							}
 							break;

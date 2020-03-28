@@ -11,6 +11,7 @@ namespace hsbg {
 	struct stats {
 		int attack;
 		int health;
+		int max_health;
 	};
 
 	enum class dr { microbots, golden_microbots, plants };

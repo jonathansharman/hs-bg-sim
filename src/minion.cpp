@@ -6,7 +6,7 @@
 
 namespace hsbg {
 	auto minion::with_stats(int attack, int health) -> minion& {
-		stats = {attack, health};
+		stats = {attack, health, health};
 		return *this;
 	}
 	auto minion::with_attack(int attack) -> minion& {
@@ -15,6 +15,7 @@ namespace hsbg {
 	}
 	auto minion::with_health(int health) -> minion& {
 		stats.health = health;
+		stats.max_health = health;
 		return *this;
 	}
 	auto minion::with_taunt() -> minion& {
