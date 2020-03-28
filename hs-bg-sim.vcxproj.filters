@@ -9,12 +9,18 @@
     <ClCompile Include="src\hs-bg-sim.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\tribes.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\names.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\board.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tiers.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\names.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\tribes.hpp">
@@ -24,6 +30,15 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\board.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ids.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\names.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\random.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

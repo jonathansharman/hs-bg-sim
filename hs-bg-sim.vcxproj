@@ -19,12 +19,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\board.cpp" />
     <ClCompile Include="src\hs-bg-sim.cpp" />
+    <ClCompile Include="src\names.cpp" />
+    <ClCompile Include="src\tribes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\board.hpp" />
     <ClInclude Include="src\minion.hpp" />
+    <ClInclude Include="src\ids.hpp" />
     <ClInclude Include="src\names.hpp" />
+    <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\tiers.hpp" />
     <ClInclude Include="src\tribes.hpp" />
   </ItemGroup>
@@ -103,6 +108,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
+      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,6 +126,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
+      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +146,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
+      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,6 +168,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
+      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
