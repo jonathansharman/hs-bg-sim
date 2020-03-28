@@ -21,8 +21,12 @@
   <ItemGroup>
     <ClCompile Include="src\board.cpp" />
     <ClCompile Include="src\hs-bg-sim.cpp" />
+    <ClCompile Include="src\minion.cpp" />
     <ClCompile Include="src\names.cpp" />
+    <ClCompile Include="src\simulation.cpp" />
+    <ClCompile Include="src\tiers.cpp" />
     <ClCompile Include="src\tribes.cpp" />
+    <ClCompile Include="src\warband.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\board.hpp" />
@@ -30,8 +34,10 @@
     <ClInclude Include="src\ids.hpp" />
     <ClInclude Include="src\names.hpp" />
     <ClInclude Include="src\random.hpp" />
+    <ClInclude Include="src\simulation.hpp" />
     <ClInclude Include="src\tiers.hpp" />
     <ClInclude Include="src\tribes.hpp" />
+    <ClInclude Include="src\warband.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -108,7 +114,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
-      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,7 +132,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
-      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,7 +152,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
-      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -168,7 +174,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4275</DisableSpecificWarnings>
-      <AdditionalOptions>/permissive- /experimental:preprocessor %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

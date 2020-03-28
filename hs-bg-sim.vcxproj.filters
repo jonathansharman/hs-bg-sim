@@ -18,6 +18,18 @@
     <ClCompile Include="src\board.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\tiers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\warband.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\minion.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simulation.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tiers.hpp">
@@ -39,6 +51,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\random.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\warband.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simulation.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
