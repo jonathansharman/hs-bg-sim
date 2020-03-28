@@ -17,19 +17,6 @@ namespace hsbg {
 		stats.health = health;
 		return *this;
 	}
-	//! Conditionally makes the minion golden and doubles its current stats.
-	auto minion::make_golden(bool value) -> minion& {
-		if (value) {
-			golden = true;
-			stats.attack *= 2;
-			stats.health *= 2;
-			if (id == id::zapp_slywick) {
-				// Slywick gains mega-windfury when golden.
-				attack_count = 4;
-			}
-		}
-		return *this;
-	}
 	auto minion::with_taunt() -> minion& {
 		taunt = true;
 		return *this;
@@ -85,8 +72,18 @@ namespace hsbg {
 		if (m.attack_count == 2) { fmt::print(", windfury"); }
 	}
 
-	auto create(id id) -> minion {
+	auto create(id id, bool golden) -> minion {
 		// This works because id is backed by a zero-indexed int. This saves having to construct an actual map.
-		return all_minions[static_cast<int>(id)];
+		minion result = all_minions[static_cast<int>(id)];
+		if (golden) {
+			result.golden = true;
+			result.stats.attack *= 2;
+			result.stats.health *= 2;
+			if (id == id::zapp_slywick) {
+				// Slywick gains mega-windfury when golden.
+				result.attack_count = 4;
+			}
+		}
+		return result;
 	}
 }

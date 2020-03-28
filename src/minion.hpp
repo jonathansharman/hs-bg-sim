@@ -44,8 +44,6 @@ namespace hsbg {
 		[[nodiscard]] auto with_stats(int attack, int health) -> minion&;
 		[[nodiscard]] auto with_attack(int attack) -> minion&;
 		[[nodiscard]] auto with_health(int health) -> minion&;
-		//! Conditionally makes the minion golden and doubles its current stats.
-		[[nodiscard]] auto make_golden(bool value = true) -> minion&;
 		[[nodiscard]] auto with_taunt() -> minion&;
 		[[nodiscard]] auto with_ds() -> minion&;
 		[[nodiscard]] auto with_reborn(bool value = true) -> minion&;
@@ -61,7 +59,7 @@ namespace hsbg {
 
 	auto print(minion const& m) -> void;
 
-	//! Array of all base minions, ordered by ID.
+	/// Array of all base minions, ordered by ID.
 	inline minion const all_minions[] = { //
 		// Tier 1
 		minion{id::alleycat, stats{1, 1}},
@@ -179,6 +177,6 @@ namespace hsbg {
 		minion{id::nadina_the_red, stats{7, 4}},
 		minion{id::zapp_slywick, stats{7, 10}}.with_windfury()};
 
-	//! Creates a fresh copy of the minion with the given @p id.
-	auto create(id id) -> minion;
+	/// Creates a fresh, optionally golden copy of the minion with the given @p id.
+	auto create(id id, bool golden = false) -> minion;
 }

@@ -232,7 +232,7 @@ namespace hsbg {
 							auto& khadgar_allies = get_allies(it);
 							if (&summoned_by == &khadgar_allies && khadgars.find(&*it) == khadgars.end()) {
 								for (int i = 0; i < (it->golden ? 2 : 1); ++i) {
-									//! @todo Look up correct rules for where to put Khadgar summons.
+									/// @todo Look up correct rules for where to put Khadgar summons.
 									khadgars.insert(&*it);
 									summon(allies, target, summoned, khadgar_allies, khadgars);
 								}
@@ -303,7 +303,7 @@ namespace hsbg {
 				}
 				break;
 			case id::mecharoo:
-				summon(allies, std::next(dying_it), create(id::jo_e_bot).make_golden(dying_it->golden), allies, {});
+				summon(allies, std::next(dying_it), create(id::jo_e_bot, dying_it->golden), allies, {});
 				break;
 			case id::selfless_hero: {
 				// Give divine shield to one (golden: two) random minions without divine shield already.
@@ -315,10 +315,10 @@ namespace hsbg {
 				break;
 			}
 			case id::harvest_golem:
-				summon(allies, std::next(dying_it), create(id::damaged_golem).make_golden(dying_it->golden), allies, {});
+				summon(allies, std::next(dying_it), create(id::damaged_golem, dying_it->golden), allies, {});
 				break;
 			case id::imprisoner:
-				summon(allies, std::next(dying_it), create(id::imp).make_golden(dying_it->golden), allies, {});
+				summon(allies, std::next(dying_it), create(id::imp, dying_it->golden), allies, {});
 				break;
 			case id::kaboom_bot:
 				// Deal 4 damage to a random enemy minion (golden: twice).
@@ -329,11 +329,11 @@ namespace hsbg {
 				}
 				break;
 			case id::kindly_grandmother:
-				summon(allies, std::next(dying_it), create(id::big_bad_wolf).make_golden(dying_it->golden), allies, {});
+				summon(allies, std::next(dying_it), create(id::big_bad_wolf, dying_it->golden), allies, {});
 				break;
 			case id::rat_pack:
 				// Summon rats (golden: golden rats) equal to the rat pack's attack.
-				summon_n(dying_it->stats.attack, allies, std::next(dying_it), create(id::rat).make_golden(dying_it->golden), allies);
+				summon_n(dying_it->stats.attack, allies, std::next(dying_it), create(id::rat, dying_it->golden), allies);
 				break;
 			case id::spawn_of_nzoth:
 				// Give all other minions +1/+1 (golden: +2/+2).
@@ -355,7 +355,7 @@ namespace hsbg {
 				break;
 			case id::infested_wolf:
 				// Summon two spiders (golden: golden spiders).
-				summon_n(2, allies, std::next(dying_it), create(id::spider).make_golden(dying_it->golden), allies);
+				summon_n(2, allies, std::next(dying_it), create(id::spider, dying_it->golden), allies);
 				break;
 			case id::piloted_shredder: {
 				// Summon one random 2-cost minion (golden: two minions).
@@ -376,18 +376,18 @@ namespace hsbg {
 			}
 			case id::replicating_menace:
 				// Summon three (golden: golden) microbots.
-				summon_n(3, allies, std::next(dying_it), create(id::microbot).make_golden(dying_it->golden), allies);
+				summon_n(3, allies, std::next(dying_it), create(id::microbot, dying_it->golden), allies);
 				break;
 			case id::the_beast:
 				// Summon a 3/3 for the opponent (not affected by golden).
 				summon(enemies, enemies.end(), create(id::finkle_einhorn), allies, {});
 				break;
 			case id::mechano_egg:
-				summon(allies, std::next(dying_it), create(id::robosaur).make_golden(dying_it->golden), allies, {});
+				summon(allies, std::next(dying_it), create(id::robosaur, dying_it->golden), allies, {});
 				break;
 			case id::savannah_highmane:
 				// Summon two (golden: golden) hyenas.
-				summon_n(2, allies, std::next(dying_it), create(id::hyena).make_golden(dying_it->golden), allies);
+				summon_n(2, allies, std::next(dying_it), create(id::hyena, dying_it->golden), allies);
 				break;
 			case id::goldrinn_the_great_wolf:
 				// Give allied beasts +4/+4 (golden: +8/+8).
@@ -440,7 +440,7 @@ namespace hsbg {
 			}
 			case id::voidlord:
 				// Summon three (golden: golden) voidwalkers.
-				summon_n(3, allies, std::next(dying_it), create(id::voidwalker).make_golden(dying_it->golden), allies);
+				summon_n(3, allies, std::next(dying_it), create(id::voidwalker, dying_it->golden), allies);
 				break;
 			case id::ghastcoiler: {
 				// Summon two random deathrattle minions (golden: four minions).
@@ -485,7 +485,7 @@ namespace hsbg {
 					allies,
 					std::next(dying_it),
 					[&dead_mechs, &i] {
-						auto result = create(dead_mechs[i].id).make_golden(dead_mechs[i].golden);
+						auto result = create(dead_mechs[i].id, dead_mechs[i].golden);
 						++i;
 						return result;
 					},
@@ -509,7 +509,7 @@ namespace hsbg {
 					summon_n(3, allies, std::next(dying_it), create(id::microbot), allies);
 					break;
 				case dr::golden_microbots:
-					summon_n(3, allies, std::next(dying_it), create(id::microbot).make_golden(), allies);
+					summon_n(3, allies, std::next(dying_it), create(id::microbot, true), allies);
 					break;
 				case dr::plants:
 					summon_n(2, allies, std::next(dying_it), create(id::plant), allies);
@@ -519,7 +519,7 @@ namespace hsbg {
 		{ // Update dead mechs list.
 			auto& dead_mechs = get_dead_mechs(allies);
 			if (dead_mechs.size() < 4 && get_tribe(*dying_it) == tribe::mech) {
-				dead_mechs.push_back(create(dying_it->id).make_golden(dying_it->golden));
+				dead_mechs.push_back(create(dying_it->id, dying_it->golden));
 			}
 		}
 	}
@@ -622,7 +622,7 @@ namespace hsbg {
 	auto simulation::resolve_deaths() -> void {
 		bool repeat = false;
 		for (auto& wb : _board) {
-			//! @todo How is it determined which player's minion deaths resolve first?
+			/// @todo How is it determined which player's minion deaths resolve first?
 			for (auto it = wb.begin(); it != wb.end(); ++it) {
 				// Only interested in minions marked as dying.
 				if (it->liveness != liveness::dying) { continue; }
@@ -652,7 +652,7 @@ namespace hsbg {
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
 								if (ally != it && get_tribe(*ally) == tribe::demon) {
 									ally->stats.attack = std::max(0, ally->stats.attack - 2);
-									//! @todo The loss of health buffs needs to account for damage taken.
+									/// @todo The loss of health buffs needs to account for damage taken.
 									ally->stats.health = std::max(1, ally->stats.health - 2);
 								}
 							}
@@ -663,7 +663,7 @@ namespace hsbg {
 					}
 					if (it->reborn) {
 						// Reborn triggers after deathrattles.
-						summon(wb, std::next(it), create(it->id).make_golden(it->golden).with_reborn(false).with_health(1), wb, {});
+						summon(wb, std::next(it), create(it->id, it->golden).with_reborn(false).with_health(1), wb, {});
 					}
 					// Mark as dead.
 					it->liveness = liveness::dead;
