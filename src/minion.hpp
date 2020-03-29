@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ids.hpp"
+#include "stats.hpp"
 #include "tiers.hpp"
 #include "tribes.hpp"
 
@@ -9,12 +10,6 @@
 #include <vector>
 
 namespace hsbg {
-	struct stats {
-		int attack;
-		int health;
-		int max_health = health;
-	};
-
 	enum class dr { microbots, golden_microbots, plants };
 	enum class on_attack { herald_of_flame, ironhide_direhorn };
 	enum class on_any_death { old_murk_eye };
@@ -43,7 +38,7 @@ namespace hsbg {
 		std::vector<on_friendly_kill> on_friendly_kills;
 		std::vector<on_damage> on_damages;
 
-		[[nodiscard]] auto with_stats(int attack, int health) -> minion&;
+		[[nodiscard]] auto with_stats(hsbg::stats stats) -> minion&;
 		[[nodiscard]] auto with_attack(int attack) -> minion&;
 		[[nodiscard]] auto with_health(int health) -> minion&;
 		[[nodiscard]] auto with_taunt() -> minion&;

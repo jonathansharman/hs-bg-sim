@@ -134,14 +134,14 @@ namespace hsbg {
 				}
 				// Search from current attacker to the right.
 				for (wb_it attacker = _current_attackers[active_wb_idx]; attacker != _board[active_wb_idx].end(); ++attacker) {
-					if (attacker->liveness == liveness::alive && attacker->stats.attack > 0) {
+					if (attacker->liveness == liveness::alive && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
 				}
 				// No viable attackers found towards the right. Wrap back around.
 				for (wb_it attacker = _board[active_wb_idx].begin(); attacker != _current_attackers[active_wb_idx]; ++attacker) {
-					if (attacker->liveness == liveness::alive && attacker->stats.attack > 0) {
+					if (attacker->liveness == liveness::alive && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
@@ -243,15 +243,15 @@ namespace hsbg {
 			for (auto const& ally : allies) {
 				switch (ally.id) {
 					case id::murloc_warleader:
-						if (get_tribe(summoned) == tribe::murloc) { summoned.stats.attack += 2; }
+						if (get_tribe(summoned) == tribe::murloc) { summoned.stats.buff_attack(2); }
 						break;
 					case id::siegebreaker:
-						if (get_tribe(summoned) == tribe::demon) { summoned.stats.attack += 1; }
+						if (get_tribe(summoned) == tribe::demon) { summoned.stats.buff_attack(1); }
 						break;
 					case id::malganis:
 						if (get_tribe(summoned) == tribe::demon) {
-							summoned.stats.attack += 2;
-							summoned.stats.health += 2;
+							summoned.stats.buff_attack(2);
+							summoned.stats.buff_health(2);
 						}
 						break;
 					default:
@@ -267,7 +267,7 @@ namespace hsbg {
 					switch (it->id) {
 						case id::old_murk_eye:
 							// Gains 1 (golden: 2) attack when a new murloc appears anywhere.
-							if (get_tribe(summoned) == tribe::murloc) { it->stats.attack += it->golden ? 2 : 1; }
+							if (get_tribe(summoned) == tribe::murloc) { it->stats.buff_attack(it->golden ? 2 : 1); }
 							break;
 						case id::cobalt_guardian:
 							// Gains divine shield when friendly mechs are summoned.
@@ -289,15 +289,15 @@ namespace hsbg {
 						case id::pack_leader:
 							// Gives friendly summoned beasts +3 attack (golden: +6 attack).
 							if (allied && get_tribe(summoned) == tribe::beast) {
-								summoned.stats.attack += it->golden ? 6 : 3;
+								summoned.stats.buff_attack(it->golden ? 6 : 3);
 							}
 							break;
 						case id::mama_bear:
 							// Gives friendly summoned beasts +4/+4 (golden: +8/+8).
 							if (allied && get_tribe(summoned) == tribe::beast) {
 								int const buff = it->golden ? 8 : 4;
-								summoned.stats.attack += buff;
-								summoned.stats.health += buff;
+								summoned.stats.buff_attack(buff);
+								summoned.stats.buff_health(buff);
 							}
 							break;
 						default:
@@ -346,7 +346,7 @@ namespace hsbg {
 				// Add attack to another random minion (golden: two minions, repeats allowed).
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
 					auto recipient = choose_alive(allies);
-					if (recipient) { (*recipient)->stats.attack += dying_it->stats.attack; }
+					if (recipient) { (*recipient)->stats.buff_attack(dying_it->stats.attack()); }
 				}
 				break;
 			case id::mecharoo:
@@ -380,15 +380,15 @@ namespace hsbg {
 				break;
 			case id::rat_pack:
 				// Summon rats (golden: golden rats) equal to the rat pack's attack.
-				summon_n(dying_it->stats.attack, allies, std::next(dying_it), create(id::rat, dying_it->golden), allies);
+				summon_n(dying_it->stats.attack(), allies, std::next(dying_it), create(id::rat, dying_it->golden), allies);
 				break;
 			case id::spawn_of_nzoth:
 				// Give all other minions +1/+1 (golden: +2/+2).
 				for (auto& ally : allies) {
 					int const buff = dying_it->golden ? 2 : 1;
 					if (&ally != &*dying_it) {
-						ally.stats.attack += buff;
-						ally.stats.health += buff;
+						ally.stats.buff_attack(buff);
+						ally.stats.buff_health(buff);
 					}
 				}
 				break;
@@ -441,8 +441,8 @@ namespace hsbg {
 				for (auto ally = allies.begin(); ally != allies.end(); ++ally) {
 					int const buff = dying_it->golden ? 8 : 4;
 					if (ally != dying_it && get_tribe(*ally) == tribe::beast) {
-						ally->stats.attack += buff;
-						ally->stats.health += buff;
+						ally->stats.buff_attack(buff);
+						ally->stats.buff_health(buff);
 					}
 				}
 				break;
@@ -451,8 +451,8 @@ namespace hsbg {
 				for (auto ally = allies.begin(); ally != allies.end(); ++ally) {
 					int const buff = dying_it->golden ? 4 : 2;
 					if (ally != dying_it && get_tribe(*ally) == tribe::murloc) {
-						ally->stats.attack += buff;
-						ally->stats.health += buff;
+						ally->stats.buff_attack(buff);
+						ally->stats.buff_health(buff);
 					}
 				}
 				break;
@@ -576,10 +576,10 @@ namespace hsbg {
 		warband& enemies = get_enemies(get_allies(attacker));
 		if (attacker->id == id::zapp_slywick) {
 			// Zapp Slywick prioritizes low-health minions.
-			int min_health = enemies.front().stats.health;
+			int min_health = enemies.front().stats.health();
 			targets.push_back(enemies.begin());
 			for (auto it = std::next(enemies.begin()); it != enemies.end(); ++it) {
-				int const health = it->stats.health;
+				int const health = it->stats.health();
 				if (health < min_health) {
 					min_health = health;
 					targets.clear();
@@ -611,12 +611,12 @@ namespace hsbg {
 				if (&ally != &*target) {
 					switch (ally.id) {
 						case id::bolvar_fireblood:
-							ally.stats.attack += ally.golden ? 4 : 2;
+							ally.stats.buff_attack(ally.golden ? 4 : 2);
 							break;
 						case id::drakonid_enforcer: {
 							int const buff = ally.golden ? 4 : 2;
-							ally.stats.attack += buff;
-							ally.stats.health += buff;
+							ally.stats.buff_attack(buff);
+							ally.stats.buff_health(buff);
 							break;
 						}
 						case id::holy_mackerel:
@@ -629,11 +629,11 @@ namespace hsbg {
 				}
 			}
 		} else if (target->liveness == liveness::alive) {
-			target->stats.health -= damage;
+			target->stats.lose_health(damage);
 			if (poisonous) {
 				target->poisoned = true;
 				target->liveness = liveness::dying;
-			} else if (target->stats.health <= 0) {
+			} else if (target->stats.health() <= 0) {
 				target->liveness = liveness::dying;
 			}
 		}
@@ -643,7 +643,7 @@ namespace hsbg {
 		auto& enemies = get_allies(primary_target);
 		if (attacker->id == id::glyph_guardian) {
 			// Apply Glyph Guardian effect.
-			attacker->stats.attack *= attacker->golden ? 3 : 2;
+			attacker->stats.buff_attack((attacker->golden ? 2 : 1) * attacker->stats.attack());
 		}
 		// Deal damage.
 		auto const cleave = attacker->id == id::cave_hydra || attacker->id == id::foe_reaper_4000;
@@ -660,10 +660,10 @@ namespace hsbg {
 		}
 		// Hit targets.
 		for (auto target : targets) {
-			take_damage(target, attacker->stats.attack, attacker->poisonous);
+			take_damage(target, attacker->stats.attack(), attacker->poisonous);
 		}
 		// Hit attacker.
-		take_damage(attacker, primary_target->stats.attack, primary_target->poisonous);
+		take_damage(attacker, primary_target->stats.attack(), primary_target->poisonous);
 	}
 
 	auto simulation::resolve_deaths() -> void {
@@ -674,7 +674,7 @@ namespace hsbg {
 				// Only interested in minions marked as dying.
 				if (it->liveness != liveness::dying) { continue; }
 				// Check if the minion is actually dead.
-				if (it->stats.health <= 0 || it->poisoned) {
+				if (it->stats.health() <= 0 || it->poisoned) {
 					// A minion has died. Will need to perform death resolution again.
 					repeat = true;
 
@@ -684,25 +684,22 @@ namespace hsbg {
 						case id::murloc_warleader:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
 								if (ally != it && get_tribe(*ally) == tribe::murloc) {
-									ally->stats.attack = std::max(0, ally->stats.attack - 2);
+									ally->stats.debuff_attack(2);
 								}
 							}
 							break;
 						case id::siegebreaker:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
 								if (ally != it && get_tribe(*ally) == tribe::demon) {
-									ally->stats.attack = std::max(0, ally->stats.attack - 1);
+									ally->stats.debuff_attack(1);
 								}
 							}
 							break;
 						case id::malganis:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
 								if (ally != it && get_tribe(*ally) == tribe::demon) {
-									// Reduce attack and max health.
-									ally->stats.attack = std::max(0, ally->stats.attack - 2);
-									ally->stats.max_health -= 2;
-									// Only reduce current health if above new maximum.
-									ally->stats.health = std::min(ally->stats.health, ally->stats.max_health);
+									ally->stats.debuff_attack(2);
+									ally->stats.debuff_health(2);
 								}
 							}
 							break;

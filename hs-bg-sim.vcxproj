@@ -25,6 +25,7 @@
     <ClCompile Include="src\minion.cpp" />
     <ClCompile Include="src\names.cpp" />
     <ClCompile Include="src\simulation.cpp" />
+    <ClCompile Include="src\stats.cpp" />
     <ClCompile Include="src\tiers.cpp" />
     <ClCompile Include="src\tribes.cpp" />
     <ClCompile Include="src\warband.cpp" />
@@ -37,6 +38,7 @@
     <ClInclude Include="src\names.hpp" />
     <ClInclude Include="src\random.hpp" />
     <ClInclude Include="src\simulation.hpp" />
+    <ClInclude Include="src\stats.hpp" />
     <ClInclude Include="src\tiers.hpp" />
     <ClInclude Include="src\tribes.hpp" />
     <ClInclude Include="src\warband.hpp" />

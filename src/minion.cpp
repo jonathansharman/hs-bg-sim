@@ -5,17 +5,16 @@
 #include <fmt/format.h>
 
 namespace hsbg {
-	auto minion::with_stats(int attack, int health) -> minion& {
-		stats = {attack, health, health};
+	auto minion::with_stats(hsbg::stats s) -> minion& {
+		stats = s;
 		return *this;
 	}
 	auto minion::with_attack(int attack) -> minion& {
-		stats.attack = attack;
+		stats.set_attack(attack);
 		return *this;
 	}
 	auto minion::with_health(int health) -> minion& {
-		stats.health = health;
-		stats.max_health = health;
+		stats.set_health(health);
 		return *this;
 	}
 	auto minion::with_taunt() -> minion& {
@@ -65,7 +64,7 @@ namespace hsbg {
 
 	auto operator<<(std::ostream& out, minion const& m) -> std::ostream& {
 		if (m.golden) { out << "golden "; }
-		out << fmt::format("{}/{} {}", m.stats.attack, m.stats.health, get_name(m));
+		out << fmt::format("{}/{} {}", m.stats.attack(), m.stats.health(), get_name(m));
 		if (m.taunt) { out << ", taunt"; }
 		if (m.ds) { out << ", divine shield"; }
 		if (m.reborn) { out << ", reborn"; }
@@ -79,8 +78,8 @@ namespace hsbg {
 		minion result = all_minions[static_cast<int>(id)];
 		if (golden) {
 			result.golden = true;
-			result.stats.attack *= 2;
-			result.stats.health *= 2;
+			result.stats.set_attack(2 * result.stats.attack());
+			result.stats.set_health(2 * result.stats.health());
 			if (id == id::zapp_slywick) {
 				// Slywick gains mega-windfury when golden.
 				result.attack_count = 4;
