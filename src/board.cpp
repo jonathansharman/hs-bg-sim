@@ -1,12 +1,15 @@
 #include "board.hpp"
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 namespace hsbg {
-	auto print(board const& board) -> void {
-		print(board[0]);
-		fmt::print("\n - VS -\n");
-		print(board[1]);
-		fmt::print("\n");
+	auto operator<<(std::ostream& out, board const& board) -> std::ostream& {
+		auto fmt_string =
+			">>> {}\n"
+			">> VS\n"
+			">>> {}";
+		out << fmt::format(fmt_string, board[0], board[1]);
+		return out;
 	}
 }

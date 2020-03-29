@@ -1,30 +1,23 @@
 #pragma once
 
 #include "board.hpp"
+#include "combat_results.hpp"
 
 #include <functional>
 #include <optional>
 #include <unordered_set>
 
 namespace hsbg {
-	using board = std::array<warband, 2>;
-
-	/// Prints a textual representation of @p board to stdout.
-	auto print(board const&) -> void;
-
+	/// Simulates HS BG combat.
 	struct simulation {
-		simulation(board const& board);
-
-		/// Simulates combat and returns the resulting score.
+		/// Builds a simulation and runs it to completion.
 		/// @param trace If true, intermediate board states will be printed.
-		auto run(bool trace = false) -> int;
+		simulation(board board, bool trace = false);
 
-		/// Simulates combat multiple times and prints a summary of the results.
-		/// @param trace If true, intermediate board states will be printed.
-		auto simulate(int n_trials, bool trace = false) -> void;
-
-		/// The sum of the first warband's tiers minus the sum of the second warband's tiers.
-		auto score() const -> int;
+		/// The final result of this simulation.
+		auto results() const -> combat_results {
+			return _results;
+		}
 
 	private:
 		/// Current board state.
@@ -35,6 +28,8 @@ namespace hsbg {
 
 		/// Used for Kangor's Apprentice's deathrattle.
 		std::array<std::vector<minion>, 2> _dead_mechs_lists;
+
+		combat_results _results;
 
 		/// Gets a reference to the warband to which the passed minion belongs.
 		/// @note Behavior is undefined if the minion is not present in either warband.
@@ -88,4 +83,8 @@ namespace hsbg {
 		/// Handles deathrattles, reborn, etc.
 		auto resolve_deaths() -> void;
 	};
+
+	/// Simulates combat @p n_trials times and aggregates the results.
+	/// @param trace If true, intermediate board states will be printed.
+	auto simulate(board const& board, int n_trials, bool trace = false) -> combat_results;
 }

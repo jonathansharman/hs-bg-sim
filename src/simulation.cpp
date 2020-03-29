@@ -5,6 +5,7 @@
 #include "tribes.hpp"
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include <numeric>
 #include <optional>
@@ -29,10 +30,8 @@ namespace hsbg {
 		}
 	}
 
-	simulation::simulation(board const& board) : _board{board} {}
-
-	auto simulation::run(bool trace) -> int {
-		if (trace) { print(_board); }
+	simulation::simulation(board board, bool trace) : _board{std::move(board)} {
+		if (trace) { fmt::print("{}\n", _board); }
 
 		std::size_t starting_wb =
 			(_board[0].size() > _board[1].size() || _board[0].size() == _board[1].size() && rand_int(0, 1)) ? 0 : 1;
@@ -108,10 +107,7 @@ namespace hsbg {
 			// Switch control to the other warband.
 			active_wb_idx = 1 - active_wb_idx;
 
-			if (trace) {
-				fmt::print("==============================\n");
-				print(_board);
-			}
+			if (trace) { fmt::print("{}\n", _board); }
 
 			// End combat if both warbands are unable to attack in a row.
 			if (current_warband_passed && previous_warband_passed) {
@@ -120,48 +116,22 @@ namespace hsbg {
 				previous_warband_passed = current_warband_passed;
 			}
 		}
-		return score();
-	}
-
-	auto simulation::simulate(int n_trials, bool trace) -> void {
-		int wins = 0;
-		int draws = 0;
-		int losses = 0;
-		int total_score = 0;
-		// If not printing a full trace, at least print the starting board.
-		if (!trace) { print(_board); }
-		for (int i = 0; i < n_trials; ++i) {
-			auto copy = *this;
-			int const score = copy.run(trace);
-			if (score > 0) {
-				++wins;
-			} else if (score < 0) {
-				++losses;
-			} else {
-				++draws;
-			}
-			total_score += score;
+		// Compute results.
+		_results.n_trials = 1;
+		_results.allied_score = std::reduce(_board[0].begin(), _board[0].end(), 0, [](int sum, minion const& m) {
+			return sum + static_cast<int>(get_tier(m.id));
+		});
+		_results.enemy_score = std::reduce(_board[1].begin(), _board[1].end(), 0, [](int sum, minion const& m) {
+			return sum + static_cast<int>(get_tier(m.id));
+		});
+		int const net_score = _results.net_score();
+		if (net_score > 0) {
+			++_results.wins;
+		} else if (net_score < 0) {
+			++_results.losses;
+		} else {
+			++_results.draws;
 		}
-		fmt::print("==============================\n");
-		fmt::print("After {} simulation{}...\n", n_trials, n_trials == 1 ? "" : "s");
-		fmt::print("  wins: {} ({}%), draws: {} ({}%), losses: {} ({}%)\n",
-			wins,
-			100.0 * wins / n_trials,
-			draws,
-			100.0 * draws / n_trials,
-			losses,
-			100.0 * losses / n_trials);
-		fmt::print("  mean score: {}\n\n", 1.0 * total_score / n_trials);
-	}
-
-	auto simulation::score() const -> int {
-		int const warband0_score = std::reduce(_board[0].begin(), _board[0].end(), 0, [](int sum, minion const& m) {
-			return sum + static_cast<int>(get_tier(m.id));
-		});
-		int const warband1_score = std::reduce(_board[1].begin(), _board[1].end(), 0, [](int sum, minion const& m) {
-			return sum + static_cast<int>(get_tier(m.id));
-		});
-		return warband0_score - warband1_score;
 	}
 
 	auto simulation::get_allies(wb_it target) -> warband& {
@@ -676,5 +646,14 @@ namespace hsbg {
 			}
 		}
 		if (repeat) { resolve_deaths(); }
+	}
+
+	auto simulate(board const& board, int n_trials, bool trace) -> combat_results {
+		combat_results results;
+		for (int i = 0; i < n_trials; ++i) {
+			simulation sim{board, trace};
+			results += sim.results();
+		}
+		return results;
 	}
 }

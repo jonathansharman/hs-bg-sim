@@ -6,16 +6,16 @@
 #include <fmt/format.h>
 
 namespace hsbg {
-	auto print(warband const& warband) -> void {
+	auto operator<<(std::ostream& out, warband const& warband) -> std::ostream& {
 		if (warband.empty()) {
-			fmt::print("<empty>");
-			return;
+			out << "<empty>";
+			return out;
 		}
-		print(warband.front());
+		out << warband.front();
 		for (auto it = std::next(warband.begin()); it != warband.end(); ++it) {
-			fmt::print("; ");
-			print(*it);
+			out << "; " << *it;
 		}
+		return out;
 	};
 
 	auto random_warband() -> warband {

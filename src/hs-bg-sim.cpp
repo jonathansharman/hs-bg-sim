@@ -2,16 +2,17 @@
 #include "simulation.hpp"
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 using namespace hsbg;
 
 auto fuzz_test() -> void {
 	for (int i = 0; i < 10'000; ++i) {
-		simulation{{random_warband(), random_warband()}}.run();
+		simulate(board{random_warband(), random_warband()}, 1);
 	}
 }
 
-auto where_to_put_brann() -> void {
+auto where_to_put_brann(int n_trials = 10'000'000) -> void {
 	warband const allies_without_brann{//
 		create(id::king_bagurgle).with_stats(12, 3),
 		create(id::old_murk_eye, true).with_stats(28, 55).with_poisonous().with_ds(),
@@ -33,25 +34,25 @@ auto where_to_put_brann() -> void {
 		allies.insert(std::next(allies.begin(), i), create(id::brann_bronzebeard));
 		boards.push_back({allies, enemies});
 	}
-	constexpr bool determine_position = true;
+	constexpr bool determine_position = false;
 	if constexpr (determine_position) {
 		for (int i = 0; i < 7; ++i) {
-			fmt::print("Brann in position {}:\n", i);
-			simulation{boards[i]}.simulate(10'000'000);
+			fmt::print("Brann in position {}:\n{}", i, simulate(boards[i], n_trials));
 		}
 	} else {
 		auto& actual_board = boards.back();
-		simulation{actual_board}.run(true);
-		fmt::print("\n");
-		simulation{actual_board}.simulate(1'000);
+		fmt::print("{}\n", simulate(actual_board, 1'000));
+		fmt::print("Sample combat:\n");
+		simulate(actual_board, 1, true);
 	}
 }
 
 auto main() -> int {
 	fuzz_test();
-
-	simulation{//
-		board{//
+	where_to_put_brann();
+	{
+		fmt::print("A random board from Reddit:\n");
+		board from_reddit{//
 			warband{//
 				create(id::lightfang_enforcer),
 				create(id::cave_hydra).with_stats(54, 41),
@@ -67,6 +68,21 @@ auto main() -> int {
 				create(id::ghastcoiler),
 				create(id::kangors_apprentice),
 				create(id::kangors_apprentice, true),
-				create(id::baron_rivendare)}}}
-		.simulate(10'000);
+				create(id::baron_rivendare)}};
+		fmt::print("{}\n{}\n\n", from_reddit, simulate(from_reddit, 10'000));
+	}
+	{
+		fmt::print("Testing too many minions:\n");
+		board const too_many_minions_test{//
+			warband{//
+				create(id::rat_pack).with_stats(7, 2).with_taunt(),
+				create(id::scavenging_hyena)},
+			warband{//
+				create(id::cave_hydra).with_stats(2, 2),
+				create(id::plant).with_attack(0),
+				create(id::plant).with_attack(0)}};
+		simulate(too_many_minions_test, 1, true);
+	}
+
+	return 0;
 }

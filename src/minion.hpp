@@ -4,6 +4,7 @@
 #include "tiers.hpp"
 #include "tribes.hpp"
 
+#include <ostream>
 #include <unordered_map>
 #include <vector>
 
@@ -11,7 +12,7 @@ namespace hsbg {
 	struct stats {
 		int attack;
 		int health;
-		int max_health;
+		int max_health = health;
 	};
 
 	enum class dr { microbots, golden_microbots, plants };
@@ -58,7 +59,7 @@ namespace hsbg {
 		[[nodiscard]] auto with_on_damage(on_damage on_damage) -> minion&;
 	};
 
-	auto print(minion const& m) -> void;
+	auto operator<<(std::ostream& out, minion const& m) -> std::ostream&;
 
 	/// Array of all base minions, ordered by ID.
 	inline minion const all_minions[] = { //

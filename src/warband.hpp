@@ -11,7 +11,7 @@ namespace hsbg {
 	using wb_it = warband::iterator;
 
 	/// Prints a textual representation of @p warband to stdout.
-	auto print(warband const& warband) -> void;
+	auto operator<<(std::ostream& out, warband const& warband) -> std::ostream&;
 
 	/// Creates a warband of 1-7 randomly chosen minions with default stats.
 	auto random_warband() -> warband;

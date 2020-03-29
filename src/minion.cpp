@@ -63,14 +63,15 @@ namespace hsbg {
 		return *this;
 	}
 
-	auto print(minion const& m) -> void {
-		if (m.golden) { fmt::print("golden "); }
-		fmt::print("{}/{} {}", m.stats.attack, m.stats.health, get_name(m));
-		if (m.taunt) { fmt::print(", taunt"); }
-		if (m.ds) { fmt::print(", divine shield"); }
-		if (m.reborn) { fmt::print(", reborn"); }
-		if (m.poisonous) { fmt::print(", poisonous"); }
-		if (m.attack_count == 2) { fmt::print(", windfury"); }
+	auto operator<<(std::ostream& out, minion const& m) -> std::ostream& {
+		if (m.golden) { out << "golden "; }
+		out << fmt::format("{}/{} {}", m.stats.attack, m.stats.health, get_name(m));
+		if (m.taunt) { out << ", taunt"; }
+		if (m.ds) { out << ", divine shield"; }
+		if (m.reborn) { out << ", reborn"; }
+		if (m.poisonous) { out << ", poisonous"; }
+		if (m.attack_count == 2) { out << ", windfury"; }
+		return out;
 	}
 
 	auto create(id id, bool golden) -> minion {
