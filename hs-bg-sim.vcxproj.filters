@@ -30,6 +30,9 @@
     <ClCompile Include="src\simulation.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\combat_results.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tiers.hpp">
@@ -57,6 +60,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\simulation.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\combat_results.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

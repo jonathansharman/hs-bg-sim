@@ -2,6 +2,7 @@
 
 #include "combat_results.hpp"
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 namespace hsbg {
@@ -10,7 +11,7 @@ namespace hsbg {
 	}
 
 	auto combat_results::draw_rate() const -> double {
-		return static_cast<double>(losses) / n_trials;
+		return static_cast<double>(draws) / n_trials;
 	}
 
 	auto combat_results::loss_rate() const -> double {
@@ -64,5 +65,25 @@ namespace hsbg {
 			100.0 * results.loss_rate(),
 			results.avg_net_score());
 		return out;
+	}
+
+	auto pretty_print(combat_results const& results) -> void {
+		auto fmt_string =
+			"Trials: {}\n"
+			"Wins/losses/draws: {} ({:.2f}%) / {} ({:.2f}%) / {} ({:.2f}%)\n"
+			"Avg. score: {}";
+		fmt::print("Trials: {}\n", results.n_trials);
+		fmt::print("Wins/losses/draws: ");
+		fmt::print(fmt::fg(fmt::color::lime_green), "{} ({:.2f}%)", results.wins, 100.0 * results.win_rate());
+		fmt::print(" / ");
+		fmt::print(fmt::fg(fmt::color::golden_rod), "{} ({:.2f}%)", results.draws, 100.0 * results.draw_rate());
+		fmt::print(" / ");
+		fmt::print(fmt::fg(fmt::color::indian_red), "{} ({:.2f}%)\n", results.losses, 100.0 * results.loss_rate());
+		fmt::print("Avg. score: ");
+		double const avg_net_score = results.avg_net_score();
+		fmt::color const avg_net_score_color = avg_net_score > 0
+			? fmt::color::lime_green
+			: avg_net_score == 0.0 ? fmt::color::golden_rod : fmt::color::indian_red;
+		fmt::print(fmt::fg(avg_net_score_color), "{}\n", avg_net_score);
 	}
 }

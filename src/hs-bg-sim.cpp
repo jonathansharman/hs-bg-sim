@@ -12,6 +12,18 @@ auto fuzz_test() -> void {
 	}
 }
 
+auto too_many_minions_test() -> void {
+	board const too_many_minions{//
+		warband{//
+			create(id::rat_pack).with_stats(7, 2).with_taunt(),
+			create(id::scavenging_hyena)},
+		warband{//
+			create(id::cave_hydra).with_stats(2, 2),
+			create(id::plant).with_attack(0),
+			create(id::plant).with_attack(0)}};
+	simulate(too_many_minions, 1, true);
+}
+
 auto where_to_put_brann(int n_trials = 10'000'000) -> void {
 	warband const allies_without_brann{//
 		create(id::king_bagurgle).with_stats(12, 3),
@@ -41,7 +53,7 @@ auto where_to_put_brann(int n_trials = 10'000'000) -> void {
 		}
 	} else {
 		auto& actual_board = boards.back();
-		fmt::print("{}\n", simulate(actual_board, 1'000));
+		pretty_print(simulate(actual_board, 100));
 		fmt::print("Sample combat:\n");
 		simulate(actual_board, 1, true);
 	}
@@ -49,40 +61,6 @@ auto where_to_put_brann(int n_trials = 10'000'000) -> void {
 
 auto main() -> int {
 	fuzz_test();
-	where_to_put_brann();
-	{
-		fmt::print("A random board from Reddit:\n");
-		board from_reddit{//
-			warband{//
-				create(id::lightfang_enforcer),
-				create(id::cave_hydra).with_stats(54, 41),
-				create(id::murloc_tidecaller).with_stats(67, 61).with_ds(),
-				create(id::primalfin_lookout).with_stats(30, 36).with_poisonous(),
-				create(id::murloc_warleader, true).with_stats(34, 38).with_ds().with_poisonous(),
-				create(id::brann_bronzebeard),
-				create(id::cobalt_scalebane, true).with_stats(57, 59)},
-			warband{//
-				create(id::spawn_of_nzoth, true).with_stats(5, 5),
-				create(id::mechano_egg, true).with_stats(7, 15).with_taunt().with_ds(),
-				create(id::ghastcoiler).with_stats(9, 9),
-				create(id::ghastcoiler),
-				create(id::kangors_apprentice),
-				create(id::kangors_apprentice, true),
-				create(id::baron_rivendare)}};
-		fmt::print("{}\n{}\n\n", from_reddit, simulate(from_reddit, 10'000));
-	}
-	{
-		fmt::print("Testing too many minions:\n");
-		board const too_many_minions_test{//
-			warband{//
-				create(id::rat_pack).with_stats(7, 2).with_taunt(),
-				create(id::scavenging_hyena)},
-			warband{//
-				create(id::cave_hydra).with_stats(2, 2),
-				create(id::plant).with_attack(0),
-				create(id::plant).with_attack(0)}};
-		simulate(too_many_minions_test, 1, true);
-	}
 
 	return 0;
 }

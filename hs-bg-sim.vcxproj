@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\board.cpp" />
+    <ClCompile Include="src\combat_results.cpp" />
     <ClCompile Include="src\hs-bg-sim.cpp" />
     <ClCompile Include="src\minion.cpp" />
     <ClCompile Include="src\names.cpp" />
@@ -30,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\board.hpp" />
+    <ClInclude Include="src\combat_results.hpp" />
     <ClInclude Include="src\minion.hpp" />
     <ClInclude Include="src\ids.hpp" />
     <ClInclude Include="src\names.hpp" />

@@ -4,9 +4,11 @@
 #include "tiers.hpp"
 #include "tribes.hpp"
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
+#include <future>
 #include <numeric>
 #include <optional>
 
@@ -28,10 +30,86 @@ namespace hsbg {
 		auto choose_alive(warband& wb) -> std::optional<wb_it> {
 			return choose(filtered_its(wb, [](minion const& m) { return m.liveness == liveness::alive; }));
 		}
+
+		/// Simulates HS BG combat.
+		struct simulation {
+			/// Builds a simulation and runs it to completion.
+			/// @param trace If true, intermediate board states will be printed.
+			simulation(board board, bool trace = false);
+
+			/// The final result of this simulation.
+			auto results() const -> combat_results {
+				return _results;
+			}
+
+		private:
+			/// Current board state.
+			board _board;
+
+			/// Tracks which minion should attack next, if possible.
+			std::array<wb_it, 2> _current_attackers;
+
+			/// Used for Kangor's Apprentice's deathrattle.
+			std::array<std::vector<minion>, 2> _dead_mechs_lists;
+
+			combat_results _results;
+
+			/// Gets a reference to the warband to which the passed minion belongs.
+			/// @note Behavior is undefined if the minion is not present in either warband.
+			auto get_allies(wb_it target) -> warband&;
+
+			/// Gets a reference to the warband opposing the input warband.
+			auto get_enemies(warband& wb) -> warband&;
+
+			/// Gets a reference to the list of dead friendly mechs for this warband.
+			auto get_dead_mechs(warband& wb) -> std::vector<minion>&;
+
+			/// Summons @p summoned to @p target in @p allies, as space permits.
+			/// @param summoned_by Reference to the warband that caused this summon.
+			/// @param khadgars The set of Khadgars that have already participated in this summoning.
+			/// @return An iterator one past @p target, if summoning was successful, or @p target otherwise.
+			auto summon( //
+				warband& allies,
+				wb_it target,
+				minion summoned,
+				warband const& summoned_by,
+				std::unordered_set<minion*> khadgars) -> wb_it;
+
+			/// Invokes @p generator @p count times and summons them to @p target, as space permits.
+			auto summon_n( //
+				int count,
+				warband& allies,
+				wb_it target,
+				std::function<minion()> const& generator,
+				warband const& summoned_by) -> void;
+
+			/// Summons @p count copies of @p summoned at @p target, as space permits.
+			auto summon_n( //
+				int count,
+				warband& allies,
+				wb_it target,
+				minion const& summoned,
+				warband const& summoned_by) -> void;
+
+			/// Kills the minion at the given location.
+			auto trigger_dr(wb_it dying_it) -> void;
+
+			/// Chooses a random attack target based on the given attacking warband and minion indices.
+			auto choose_target(wb_it attacker) -> std::optional<wb_it>;
+
+			/// Causes @p target to take @p damage optionally @p poisonous damage.
+			auto take_damage(wb_it target, int damage, bool poisonous) -> void;
+
+			/// Executes the given attack.
+			auto attack(wb_it attacker, wb_it primary_target) -> void;
+
+			/// Handles deathrattles, reborn, etc.
+			auto resolve_deaths() -> void;
+		};
 	}
 
 	simulation::simulation(board board, bool trace) : _board{std::move(board)} {
-		if (trace) { fmt::print("{}\n", _board); }
+		if (trace) { pretty_print(_board); }
 
 		std::size_t starting_wb =
 			(_board[0].size() > _board[1].size() || _board[0].size() == _board[1].size() && rand_int(0, 1)) ? 0 : 1;
@@ -107,7 +185,7 @@ namespace hsbg {
 			// Switch control to the other warband.
 			active_wb_idx = 1 - active_wb_idx;
 
-			if (trace) { fmt::print("{}\n", _board); }
+			if (trace) { pretty_print(_board); }
 
 			// End combat if both warbands are unable to attack in a row.
 			if (current_warband_passed && previous_warband_passed) {
@@ -157,8 +235,7 @@ namespace hsbg {
 		wb_it target,
 		minion summoned,
 		warband const& summoned_by,
-		std::unordered_set<minion*> khadgars) -> wb_it //
-	{
+		std::unordered_set<minion*> khadgars) -> wb_it { //
 		auto const live_count = std::count_if(
 			allies.begin(), allies.end(), [](minion const& m) { return m.liveness == liveness::alive; });
 		if (live_count < 7) {
@@ -649,11 +726,27 @@ namespace hsbg {
 	}
 
 	auto simulate(board const& board, int n_trials, bool trace) -> combat_results {
-		combat_results results;
-		for (int i = 0; i < n_trials; ++i) {
-			simulation sim{board, trace};
-			results += sim.results();
+		std::vector<std::future<combat_results>> future_results;
+		// Determine number of async tasks to create.
+		int const n_tasks = std::min(n_trials, static_cast<int>(std::thread::hardware_concurrency()));
+		// Create tasks.
+		for (int task_idx = 0; task_idx < n_tasks; ++task_idx) {
+			future_results.emplace_back(std::async([=, &board] {
+				combat_results results;
+				// When tasks cannot be divided evenly, front-load the leftover tasks.
+				int const n_local_trials = n_trials / n_tasks + (task_idx < n_trials % n_tasks ? 1 : 0);
+				for (int i = 0; i < n_local_trials; ++i) {
+					results += simulation{board, trace}.results();
+				}
+				return results;
+			}));
 		}
+		// Gather results.
+		auto results = std::reduce( //
+			future_results.begin(),
+			future_results.end(),
+			combat_results{},
+			[](combat_results const& acc, std::future<combat_results>& fut_results) { return acc + fut_results.get(); });
 		return results;
 	}
 }

@@ -39,4 +39,7 @@ namespace hsbg {
 	auto operator+(combat_results const& left, combat_results const& right) -> combat_results;
 
 	auto operator<<(std::ostream& out, combat_results const& results) -> std::ostream&;
+
+	//! Prints combat results with text formatting.
+	auto pretty_print(combat_results const& results) -> void;
 }

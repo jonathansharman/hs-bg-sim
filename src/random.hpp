@@ -4,7 +4,7 @@
 
 template <typename T>
 inline auto rand_int(T start_inc, T end_inc) -> T {
-	static std::mt19937 prng{std::random_device{}()};
+	thread_local std::mt19937 prng{std::random_device{}()};
 	std::uniform_int_distribution<T> dist(start_inc, end_inc);
 	return dist(prng);
 }
