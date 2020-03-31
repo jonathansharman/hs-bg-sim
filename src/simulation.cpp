@@ -28,7 +28,7 @@ namespace hsbg {
 		}
 
 		auto choose_alive(warband& wb) -> std::optional<wb_it> {
-			return choose(filtered_its(wb, [](minion const& m) { return m.liveness == liveness::alive; }));
+			return choose(filtered_its(wb, [](minion const& m) { return m.alive(); }));
 		}
 
 		/// Simulates HS BG combat.
@@ -97,8 +97,9 @@ namespace hsbg {
 			/// Chooses a random attack target based on the given attacking warband and minion indices.
 			auto choose_target(wb_it attacker) -> std::optional<wb_it>;
 
-			/// Causes @p target to take @p damage optionally @p poisonous damage.
-			auto take_damage(wb_it target, int damage, bool poisonous) -> void;
+			/// Causes @p target to take @p damage from @p source.
+			/// @param can_overkill Determines whether this can trigger overkill effects.
+			auto take_damage_from(wb_it target, int damage, wb_it source, bool can_overkill = true) -> void;
 
 			/// Executes the given attack.
 			auto attack(wb_it attacker, wb_it primary_target) -> void;
@@ -134,14 +135,14 @@ namespace hsbg {
 				}
 				// Search from current attacker to the right.
 				for (wb_it attacker = _current_attackers[active_wb_idx]; attacker != _board[active_wb_idx].end(); ++attacker) {
-					if (attacker->liveness == liveness::alive && attacker->stats.attack() > 0) {
+					if (attacker->alive() && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
 				}
 				// No viable attackers found towards the right. Wrap back around.
 				for (wb_it attacker = _board[active_wb_idx].begin(); attacker != _current_attackers[active_wb_idx]; ++attacker) {
-					if (attacker->liveness == liveness::alive && attacker->stats.attack() > 0) {
+					if (attacker->alive() && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
@@ -154,7 +155,7 @@ namespace hsbg {
 			if (o_attacker) {
 				auto const attacker = *o_attacker;
 				current_warband_passed = false;
-				for (int i = 0; i < attacker->attack_count && attacker->liveness == liveness::alive; ++i) {
+				for (int i = 0; i < attacker->attack_count && attacker->alive(); ++i) {
 					auto const o_target = choose_target(attacker);
 					if (o_target) {
 						attack(attacker, *o_target);
@@ -166,7 +167,7 @@ namespace hsbg {
 					warband& wb = _board[i];
 					wb_it& current_attacker = _current_attackers[i];
 					for (auto it = wb.begin(); it != wb.end();) {
-						if (it->liveness == liveness::dead) {
+						if (it->dead()) {
 							// If the current attacker has died, need to move the current attacker forward by one.
 							if (it == current_attacker) {
 								++current_attacker;
@@ -236,8 +237,7 @@ namespace hsbg {
 		minion summoned,
 		warband const& summoned_by,
 		std::unordered_set<minion*> khadgars) -> wb_it { //
-		auto const live_count = std::count_if(
-			allies.begin(), allies.end(), [](minion const& m) { return m.liveness == liveness::alive; });
+		auto const live_count = std::count_if(allies.begin(), allies.end(), [](minion const& m) { return m.alive(); });
 		if (live_count < 7) {
 			// Apply auras.
 			for (auto const& ally : allies) {
@@ -260,7 +260,7 @@ namespace hsbg {
 				}
 			}
 
-			// Apply on-summon effects.
+			// Trigger on-summon effects.
 			for (auto& wb : _board) {
 				bool const allied = &wb == &allies;
 				for (auto it = wb.begin(); it != wb.end(); ++it) {
@@ -355,8 +355,7 @@ namespace hsbg {
 			case id::selfless_hero: {
 				// Give divine shield to one (golden: two) random minions without divine shield already.
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
-					auto recipient = choose(
-						filtered_its(allies, [](minion const& m) { return m.liveness == liveness::alive && !m.ds; }));
+					auto recipient = choose(filtered_its(allies, [](minion const& m) { return m.alive() && !m.ds; }));
 					if (recipient) { (*recipient)->ds = true; }
 				}
 				break;
@@ -370,9 +369,7 @@ namespace hsbg {
 			case id::kaboom_bot:
 				// Deal 4 damage to a random enemy minion (golden: twice).
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
-					if (auto target = choose_alive(get_enemies(allies))) {
-						take_damage(*target, 4, dying_it->poisonous);
-					}
+					if (auto target = choose_alive(get_enemies(allies))) { take_damage_from(*target, 4, dying_it); }
 				}
 				break;
 			case id::kindly_grandmother:
@@ -396,7 +393,7 @@ namespace hsbg {
 				// Deal 1 (golden: 2) damage to all other minions.
 				for (auto& warband : _board) {
 					for (auto it = warband.begin(); it != warband.end(); ++it) {
-						if (&*it != &*dying_it) { take_damage(it, dying_it->golden ? 2 : 1, dying_it->poisonous); }
+						if (&*it != &*dying_it) { take_damage_from(it, dying_it->golden ? 2 : 1, dying_it); }
 					}
 				}
 				break;
@@ -602,12 +599,17 @@ namespace hsbg {
 		return targets.empty() ? std::nullopt : std::make_optional(rand_element(targets));
 	}
 
-	auto simulation::take_damage(wb_it target, int damage, bool poisonous) -> void {
-		if (damage == 0) { return; }
+	auto simulation::take_damage_from(wb_it target, int damage, wb_it source, bool can_overkill) -> void {
+		if (damage == 0) {
+			// Dealing zero damage does absolutely nothing.
+			return;
+		}
+		auto& allies = get_allies(target);
+		auto& enemies = get_enemies(allies);
 		if (target->ds) {
 			target->ds = false;
-			// Apply loss-of-divine-shield effects.
-			for (auto& ally : get_allies(target)) {
+			// Trigger loss-of-divine-shield effects.
+			for (auto& ally : allies) {
 				if (&ally != &*target) {
 					switch (ally.id) {
 						case id::bolvar_fireblood:
@@ -628,13 +630,81 @@ namespace hsbg {
 					}
 				}
 			}
-		} else if (target->liveness == liveness::alive) {
+		} else {
 			target->stats.lose_health(damage);
-			if (poisonous) {
+			// Trigger on-damage effects.
+			switch (target->id) {
+				case id::imp_gang_boss:
+					summon(allies, std::next(target), create(id::imp, target->golden), allies, {});
+					break;
+				case id::security_rover:
+					summon(allies, std::next(target), create(id::guard_bot, target->golden), allies, {});
+					break;
+				case id::imp_mama: {
+					// Summon one (golden: two) random demons. Cannot summon itself.
+					static id imp_mama_summons[] = {//
+						id::fiendish_servant,
+						id::vulgar_homunculus,
+						id::imprisoner,
+						id::nathrezim_overseer,
+						id::imp_gang_boss,
+						id::floating_watcher,
+						id::siegebreaker,
+						id::annihilan_battlemaster,
+						id::malganis,
+						id::voidlord};
+					summon_n(
+						target->golden ? 2 : 1,
+						allies,
+						std::next(target),
+						[] { return create(rand_element(imp_mama_summons)); },
+						allies);
+					break;
+				}
+				default:
+					// No on-damage effects.
+					break;
+			}
+			// Determine if the target is now dying.
+			if (source->poisonous) {
 				target->poisoned = true;
-				target->liveness = liveness::dying;
-			} else if (target->stats.health() <= 0) {
-				target->liveness = liveness::dying;
+				if (target->alive()) { target->make_dying(); }
+			}
+			if (target->alive() && target->stats.health() <= 0) {
+				target->make_dying();
+				if (can_overkill && target->stats.health() < 0) {
+					// Trigger overkill effects.
+					switch (source->id) {
+						case id::herald_of_flame: {
+							// Deal damage to left-most living minion in the target's warband.
+							auto const leftmost_living = std::find_if( //
+								allies.begin(),
+								allies.end(),
+								[](minion const& ally) { return ally.alive(); });
+							if (leftmost_living != allies.end()) {
+								take_damage_from(leftmost_living, source->golden ? 6 : 3, source);
+							}
+							break;
+						}
+						case id::ironhide_direhorn: {
+							summon(enemies, std::next(source), create(id::ironhide_runt, source->golden), enemies, {});
+							break;
+						}
+						default:
+							// No overkill effects.
+							break;
+					}
+				}
+			}
+			if (!target->alive()) {
+				// Trigger on-kill effects.
+				for (auto it = enemies.begin(); it != enemies.end(); ++it) {
+					if (it->id == id::waxrider_togwaggle && get_tribe(*source) == tribe::dragon) {
+						int const buff = it->golden ? 4 : 2;
+						it->stats.buff_attack(buff);
+						it->stats.buff_health(buff);
+					}
+				}
 			}
 		}
 	}
@@ -642,7 +712,7 @@ namespace hsbg {
 	auto simulation::attack(wb_it attacker, wb_it primary_target) -> void {
 		auto& enemies = get_allies(primary_target);
 		if (attacker->id == id::glyph_guardian) {
-			// Apply Glyph Guardian effect.
+			// Trigger Glyph Guardian effect.
 			attacker->stats.buff_attack((attacker->golden ? 2 : 1) * attacker->stats.attack());
 		}
 		// Deal damage.
@@ -660,10 +730,10 @@ namespace hsbg {
 		}
 		// Hit targets.
 		for (auto target : targets) {
-			take_damage(target, attacker->stats.attack(), attacker->poisonous);
+			take_damage_from(target, attacker->stats.attack(), attacker);
 		}
-		// Hit attacker.
-		take_damage(attacker, primary_target->stats.attack(), primary_target->poisonous);
+		// Reciprocate against attacker. Such damage cannot trigger overkill.
+		take_damage_from(attacker, primary_target->stats.attack(), primary_target, false);
 	}
 
 	auto simulation::resolve_deaths() -> void {
@@ -672,27 +742,56 @@ namespace hsbg {
 			/// @todo How is it determined which player's minion deaths resolve first?
 			for (auto it = wb.begin(); it != wb.end(); ++it) {
 				// Only interested in minions marked as dying.
-				if (it->liveness != liveness::dying) { continue; }
+				if (!it->dying()) { continue; }
 				// Check if the minion is actually dead.
 				if (it->stats.health() <= 0 || it->poisoned) {
 					// A minion has died. Will need to perform death resolution again.
 					repeat = true;
-
+					// Trigger on-other-death effects of other minions.
+					for (auto& other_wb : _board) {
+						for (auto other_it = other_wb.begin(); other_it != other_wb.end(); ++other_it) {
+							if (&*other_it == &*it) { continue; }
+							switch (other_it->id) {
+								case id::old_murk_eye:
+									if (get_tribe(*it) == tribe::murloc) {
+										other_it->stats.debuff_attack(other_it->golden ? 2 : 1);
+									}
+									break;
+								case id::scavenging_hyena:
+									if (&other_wb == &wb && get_tribe(*it) == tribe::beast) {
+										bool const golden = other_it->golden;
+										other_it->stats.buff_attack(golden ? 4 : 2);
+										other_it->stats.buff_health(golden ? 2 : 1);
+									}
+									break;
+								case id::baron_rivendare:
+									//! @todo Trigger additional deathrattles.
+									break;
+								case id::junkbot:
+									if (&other_wb == &wb && get_tribe(*it) == tribe::mech) {
+										int const buff = other_it->golden ? 4 : 2;
+										other_it->stats.buff_attack(buff);
+										other_it->stats.buff_health(buff);
+									}
+									break;
+								default:
+									// No on-other-death effects.
+									break;
+							}
+						}
+					}
+					// Trigger this minion's deathrattles.
 					trigger_dr(it);
 					// Remove any aura buffs this minion was giving.
 					switch (it->id) {
 						case id::murloc_warleader:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-								if (ally != it && get_tribe(*ally) == tribe::murloc) {
-									ally->stats.debuff_attack(2);
-								}
+								if (ally != it && get_tribe(*ally) == tribe::murloc) { ally->stats.debuff_attack(2); }
 							}
 							break;
 						case id::siegebreaker:
 							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-								if (ally != it && get_tribe(*ally) == tribe::demon) {
-									ally->stats.debuff_attack(1);
-								}
+								if (ally != it && get_tribe(*ally) == tribe::demon) { ally->stats.debuff_attack(1); }
 							}
 							break;
 						case id::malganis:
@@ -707,15 +806,15 @@ namespace hsbg {
 							// No aura.
 							break;
 					}
+					// Trigger reborn, if present.
 					if (it->reborn) {
-						// Reborn triggers after deathrattles.
 						summon(wb, std::next(it), create(it->id, it->golden).with_reborn(false).with_health(1), wb, {});
 					}
 					// Mark as dead.
-					it->liveness = liveness::dead;
+					it->make_dead();
 				} else {
 					// The minion was brought back to life by a DR health buff.
-					it->liveness = liveness::alive;
+					it->make_alive();
 				}
 			}
 		}

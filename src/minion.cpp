@@ -5,6 +5,28 @@
 #include <fmt/format.h>
 
 namespace hsbg {
+	minion::minion(hsbg::id id, hsbg::stats stats) : id{id}, stats{stats} {}
+
+	auto minion::alive() const->bool {
+		return _liveness == liveness::alive;
+	}
+	auto minion::dying() const -> bool {
+		return _liveness == liveness::dying;
+	}
+	auto minion::dead() const -> bool {
+		return _liveness == liveness::dead;
+	}
+
+	auto minion::make_alive() -> void {
+		_liveness = liveness::alive;
+	}
+	auto minion::make_dying() -> void {
+		_liveness = liveness::dying;
+	}
+	auto minion::make_dead() -> void {
+		_liveness = liveness::dead;
+	}
+
 	auto minion::with_stats(hsbg::stats s) -> minion& {
 		stats = s;
 		return *this;
@@ -43,22 +65,6 @@ namespace hsbg {
 	}
 	auto minion::with_dr(dr dr) -> minion& {
 		drs.push_back(dr);
-		return *this;
-	}
-	auto minion::with_on_attack(on_attack on_attack) -> minion& {
-		on_attacks.push_back(on_attack);
-		return *this;
-	}
-	auto minion::with_on_friendly_death(on_friendly_death on_friendly_death) -> minion& {
-		on_friendly_deaths.push_back(on_friendly_death);
-		return *this;
-	}
-	auto minion::with_on_friendly_kill(on_friendly_kill on_friendly_kill) -> minion& {
-		on_friendly_kills.push_back(on_friendly_kill);
-		return *this;
-	}
-	auto minion::with_on_damage(on_damage on_damage) -> minion& {
-		on_damages.push_back(on_damage);
 		return *this;
 	}
 

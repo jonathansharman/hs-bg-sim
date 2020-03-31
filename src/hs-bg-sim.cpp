@@ -59,9 +59,31 @@ auto where_to_put_brann(int n_trials = 1'000'000) -> void {
 	}
 }
 
+auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
+	board const board{//
+		warband{//
+			create(id::king_bagurgle).with_stats({14, 3}),
+			create(id::king_bagurgle).with_stats({18, 7}),
+			create(id::king_bagurgle, true).with_stats({32, 50}).with_poisonous(),
+			create(id::murloc_warleader, true).with_stats({40, 82}).with_poisonous(),
+			create(id::coldlight_seer, true).with_stats({40, 60}).with_poisonous(),
+			create(id::murloc_warleader, true).with_stats({32, 70}).with_poisonous(),
+			create(id::brann_bronzebeard)},
+		warband{//
+			create(id::nadina_the_red),
+			create(id::twilight_emissary, true).with_stats({39, 41}),
+			create(id::razoregore_the_untamed).with_stats({79, 81}),
+			create(id::cobalt_guardian, true).with_stats({28, 32}),
+			create(id::kalecgos_arcane_aspect).with_stats({25, 33}),
+			create(id::zoobot).with_stats({4, 5}),
+			create(id::drakonid_enforcer, true).with_stats({28, 31})}};
+	pretty_print(simulate(board, n_trials));
+	fmt::print("Sample combat:\n");
+	simulate(board, 1, true);
+}
+
 auto main() -> int {
 	fuzz_test();
-	where_to_put_brann();
 
 	return 0;
 }
