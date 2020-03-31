@@ -114,6 +114,8 @@ namespace hsbg {
 		minion{id::coldlight_seer, {2, 3}},
 		minion{id::crowd_favorite, {4, 4}},
 		minion{id::crystal_weaver, {5, 4}},
+		minion{id::deflect_o_bot, {3, 2}}.with_ds(),
+		minion{id::felfin_navigator, {4, 4}},
 		minion{id::hangry_dragon, {4, 4}},
 		minion{id::houndmaster, {4, 3}},
 		minion{id::imp_gang_boss, {2, 4}},

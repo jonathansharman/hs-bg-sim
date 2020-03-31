@@ -3,8 +3,9 @@
 #include "minion.hpp"
 
 namespace hsbg {
-	auto get_tribe(id const& id) -> tribe {
+	auto get_tribe(id id) -> tribe {
 		switch (id) {
+			// Tribe-less
 			case id::baron_rivendare:
 			case id::bolvar_fireblood:
 			case id::brann_bronzebeard:
@@ -32,8 +33,10 @@ namespace hsbg {
 			case id::wrath_weaver:
 			case id::zapp_slywick:
 				return tribe::none;
+			// Mechs
 			case id::annoy_o_module:
 			case id::damaged_golem:
+			case id::deflect_o_bot:
 			case id::foe_reaper_4000:
 			case id::guard_bot:
 			case id::harvest_golem:
@@ -55,6 +58,7 @@ namespace hsbg {
 			case id::sneeds_old_shredder:
 			case id::zoobot:
 				return tribe::mech;
+			// Beasts
 			case id::alleycat:
 			case id::big_bad_wolf:
 			case id::cave_hydra:
@@ -77,6 +81,7 @@ namespace hsbg {
 			case id::tabbycat:
 			case id::the_beast:
 				return tribe::beast;
+			// Demons
 			case id::annihilan_battlemaster:
 			case id::fiendish_servant:
 			case id::floating_watcher:
@@ -91,7 +96,9 @@ namespace hsbg {
 			case id::voidwalker:
 			case id::vulgar_homunculus:
 				return tribe::demon;
+			// Murlocs
 			case id::coldlight_seer:
+			case id::felfin_navigator:
 			case id::holy_mackerel:
 			case id::king_bagurgle:
 			case id::murloc_scout:
@@ -103,6 +110,7 @@ namespace hsbg {
 			case id::rockpool_hunter:
 			case id::toxfin:
 				return tribe::murloc;
+			// Dragons
 			case id::bronze_warden:
 			case id::cobalt_guardian:
 			case id::cobalt_scalebane:
@@ -118,6 +126,7 @@ namespace hsbg {
 			case id::steward_of_time:
 			case id::twilight_emissary:
 				return tribe::dragon;
+			// All
 			case id::amalgam:
 				return tribe::all;
 		}
@@ -127,5 +136,49 @@ namespace hsbg {
 
 	auto get_tribe(minion const& m) -> tribe {
 		return get_tribe(m.id);
+	}
+
+	auto is_tribeless(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::none;
+	}
+	auto is_mech(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::mech || tribe == tribe::all;
+	}
+	auto is_beast(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::beast || tribe == tribe::all;
+	}
+	auto is_demon(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::demon || tribe == tribe::all;
+	}
+	auto is_murloc(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::murloc || tribe == tribe::all;
+	}
+	auto is_dragon(id id) -> bool {
+		auto const tribe = get_tribe(id);
+		return tribe == tribe::dragon || tribe == tribe::all;
+	}
+
+	auto is_tribeless(minion const& m) -> bool {
+		return is_tribeless(m.id);
+	}
+	auto is_mech(minion const& m) -> bool {
+		return is_mech(m.id);
+	}
+	auto is_beast(minion const& m) -> bool {
+		return is_beast(m.id);
+	}
+	auto is_demon(minion const& m) -> bool {
+		return is_demon(m.id);
+	}
+	auto is_murloc(minion const& m) -> bool {
+		return is_murloc(m.id);
+	}
+	auto is_dragon(minion const& m) -> bool {
+		return is_dragon(m.id);
 	}
 }

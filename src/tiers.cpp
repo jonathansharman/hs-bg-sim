@@ -3,8 +3,9 @@
 #include "minion.hpp"
 
 namespace hsbg {
-	auto get_tier(id const& id) -> tier {
+	auto get_tier(id id) -> tier {
 		switch (id) {
+			// Tier 1
 			case id::alleycat:
 			case id::dire_wolf_alpha:
 			case id::dragonspawn_lieutenant:
@@ -37,6 +38,7 @@ namespace hsbg {
 			case id::voidwalker:
 			case id::amalgam:
 				return tier::one;
+			// Tier 2
 			case id::glyph_guardian:
 			case id::harvest_golem:
 			case id::imprisoner:
@@ -55,11 +57,14 @@ namespace hsbg {
 			case id::waxrider_togwaggle:
 			case id::zoobot:
 				return tier::two;
+			// Tier 3
 			case id::bronze_warden:
 			case id::cobalt_guardian:
 			case id::coldlight_seer:
 			case id::crowd_favorite:
 			case id::crystal_weaver:
+			case id::deflect_o_bot:
+			case id::felfin_navigator:
 			case id::hangry_dragon:
 			case id::houndmaster:
 			case id::imp_gang_boss:
@@ -74,6 +79,7 @@ namespace hsbg {
 			case id::the_beast:
 			case id::twilight_emissary:
 				return tier::three;
+			// Tier 4
 			case id::annoy_o_module:
 			case id::bolvar_fireblood:
 			case id::cave_hydra:
@@ -91,6 +97,7 @@ namespace hsbg {
 			case id::toxfin:
 			case id::virmen_sensei:
 				return tier::four;
+			// Tier 5
 			case id::annihilan_battlemaster:
 			case id::baron_rivendare:
 			case id::brann_bronzebeard:
@@ -107,6 +114,7 @@ namespace hsbg {
 			case id::strongshell_scavenger:
 			case id::voidlord:
 				return tier::five;
+			// Tier 6
 			case id::foe_reaper_4000:
 			case id::gentle_megasaur:
 			case id::ghastcoiler:

@@ -243,13 +243,13 @@ namespace hsbg {
 			for (auto const& ally : allies) {
 				switch (ally.id) {
 					case id::murloc_warleader:
-						if (get_tribe(summoned) == tribe::murloc) { summoned.stats.buff_attack(2); }
+						if (is_murloc(summoned)) { summoned.stats.buff_attack(2); }
 						break;
 					case id::siegebreaker:
-						if (get_tribe(summoned) == tribe::demon) { summoned.stats.buff_attack(1); }
+						if (is_demon(summoned)) { summoned.stats.buff_attack(1); }
 						break;
 					case id::malganis:
-						if (get_tribe(summoned) == tribe::demon) {
+						if (is_demon(summoned)) {
 							summoned.stats.buff_attack(2);
 							summoned.stats.buff_health(2);
 						}
@@ -267,11 +267,18 @@ namespace hsbg {
 					switch (it->id) {
 						case id::old_murk_eye:
 							// Gains 1 (golden: 2) attack when a new murloc appears anywhere.
-							if (get_tribe(summoned) == tribe::murloc) { it->stats.buff_attack(it->golden ? 2 : 1); }
+							if (is_murloc(summoned)) { it->stats.buff_attack(it->golden ? 2 : 1); }
 							break;
 						case id::cobalt_guardian:
 							// Gains divine shield when friendly mechs are summoned.
-							if (allied && get_tribe(summoned) == tribe::mech) { it->ds = true; }
+							if (allied && is_mech(summoned)) { it->ds = true; }
+							break;
+						case id::deflect_o_bot:
+							// Gains divine shield and +1 (golden: +2) attack when friendly mechs are summoned.
+							if (allied && is_mech(summoned)) {
+								it->stats.buff_attack(it->golden ? 2 : 1);
+								it->ds = true;
+							}
 							break;
 						case id::khadgar: {
 							// Khadgar triggers summons twice (golden: three times) if summoned by a friendly source.
@@ -288,13 +295,13 @@ namespace hsbg {
 						}
 						case id::pack_leader:
 							// Gives friendly summoned beasts +3 attack (golden: +6 attack).
-							if (allied && get_tribe(summoned) == tribe::beast) {
+							if (allied && is_beast(summoned)) {
 								summoned.stats.buff_attack(it->golden ? 6 : 3);
 							}
 							break;
 						case id::mama_bear:
 							// Gives friendly summoned beasts +4/+4 (golden: +8/+8).
-							if (allied && get_tribe(summoned) == tribe::beast) {
+							if (allied && is_beast(summoned)) {
 								int const buff = it->golden ? 8 : 4;
 								summoned.stats.buff_attack(buff);
 								summoned.stats.buff_health(buff);

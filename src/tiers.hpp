@@ -7,6 +7,6 @@ namespace hsbg {
 
 	struct minion;
 
-	auto get_tier(id const& id) -> tier;
+	auto get_tier(id id) -> tier;
 	auto get_tier(minion const& id) -> tier;
 }

@@ -59,6 +59,8 @@ namespace hsbg {
 		coldlight_seer,
 		crowd_favorite,
 		crystal_weaver,
+		deflect_o_bot,
+		felfin_navigator,
 		hangry_dragon,
 		houndmaster,
 		imp_gang_boss,

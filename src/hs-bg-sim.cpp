@@ -7,9 +7,12 @@
 using namespace hsbg;
 
 auto fuzz_test() -> void {
-	for (int i = 0; i < 10'000; ++i) {
+	constexpr int n_boards = 10'000;
+	fmt::print("Simulating {} boards.\n", n_boards);
+	for (int i = 0; i < n_boards; ++i) {
 		simulate(board{random_warband(), random_warband()}, 1);
 	}
+	fmt::print("Done.\n");
 }
 
 auto too_many_minions_test() -> void {
