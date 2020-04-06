@@ -6,6 +6,8 @@ namespace hsbg {
 	struct stats {
 		stats(int attack, int health);
 
+		auto operator==(stats const&) const -> bool = default;
+
 		auto attack() const -> int;
 		auto health() const -> int;
 		auto max_health() const -> int;

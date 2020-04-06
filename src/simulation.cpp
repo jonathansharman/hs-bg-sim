@@ -7,6 +7,12 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <range/v3/algorithm/permutation.hpp>
+#include <range/v3/algorithm/sort.hpp>
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/iota.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/zip_with.hpp>
 
 #include <future>
 #include <numeric>
@@ -295,9 +301,7 @@ namespace hsbg {
 						}
 						case id::pack_leader:
 							// Gives friendly summoned beasts +3 attack (golden: +6 attack).
-							if (allied && is_beast(summoned)) {
-								summoned.stats.buff_attack(it->golden ? 6 : 3);
-							}
+							if (allied && is_beast(summoned)) { summoned.stats.buff_attack(it->golden ? 6 : 3); }
 							break;
 						case id::mama_bear:
 							// Gives friendly summoned beasts +4/+4 (golden: +8/+8).
@@ -851,5 +855,65 @@ namespace hsbg {
 			combat_results{},
 			[](combat_results const& acc, std::future<combat_results>& fut_results) { return acc + fut_results.get(); });
 		return results;
+	}
+
+	auto optimize_ally_order(board const& actual_board, int n_trials_per_alternative, goal goal) -> board {
+		using namespace ranges;
+		// A minion along with its original index in its warband.
+		using ordered_minion = std::pair<minion, std::size_t>;
+		// Compute results of original warband.
+		auto actual_results = simulate(actual_board, n_trials_per_alternative);
+		// Create (ally, original index) list.
+		std::vector<ordered_minion> ordered_allies = //
+			views::zip_with( //
+				[](minion const& m, int i) {
+					return ordered_minion{m, i};
+				},
+				actual_board[0],
+				views::iota(std::size_t{0})) //
+			| to<std::vector>();
+		auto score_results = [goal](combat_results const& results) {
+			switch (goal) {
+				case goal::max_wins:
+					return results.wins;
+					break;
+				case goal::min_losses:
+					return -results.losses;
+					break;
+				case goal::max_net_wins:
+					return results.wins - results.losses;
+					break;
+				case goal::max_damage_given:
+					return results.allied_score;
+					break;
+				case goal::min_damage_taken:
+					return results.enemy_score;
+					break;
+				case goal::max_net_damage:
+					return results.net_score();
+					break;
+				default:
+					// Unreachable.
+					__assume(false);
+			}
+		};
+		// Keep track of best board/results/score.
+		auto best_board = actual_board;
+		auto best_results = actual_results;
+		auto best_score = score_results(actual_results);
+		// Iterate over every board permutation to find the best one.
+		do {
+			board candidate_board{//
+				views::transform(ordered_allies, &ordered_minion::first) | to<std::list>,
+				actual_board[1]};
+			auto const candidate_results = simulate(candidate_board, n_trials_per_alternative);
+			auto const candidate_score = score_results(candidate_results);
+			if (candidate_score > best_score) {
+				best_board = candidate_board;
+				best_results = candidate_results;
+				best_score = candidate_score;
+			}
+		} while (next_permutation(ordered_allies, {}, &ordered_minion::second));
+		return best_board;
 	}
 }

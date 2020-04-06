@@ -68,10 +68,6 @@ namespace hsbg {
 	}
 
 	auto pretty_print(combat_results const& results) -> void {
-		auto fmt_string =
-			"Trials: {}\n"
-			"Wins/losses/draws: {} ({:.2f}%) / {} ({:.2f}%) / {} ({:.2f}%)\n"
-			"Avg. score: {}";
 		fmt::print("Trials: {}\n", results.n_trials);
 		fmt::print("Wins/losses/draws: ");
 		fmt::print(fmt::fg(fmt::color::lime_green), "{} ({:.2f}%)", results.wins, 100.0 * results.win_rate());

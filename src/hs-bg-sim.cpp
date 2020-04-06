@@ -1,6 +1,7 @@
 #include "random.hpp"
 #include "simulation.hpp"
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
@@ -83,10 +84,22 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 	pretty_print(simulate(board, n_trials));
 	fmt::print("Sample combat:\n");
 	simulate(board, 1, true);
+
+	fmt::print("Optimizing allied warband order for max net wins...\n");
+	auto const best_board = optimize_ally_order(board, 1'000, goal::max_net_wins);
+	if (best_board == board) {
+		fmt::print("Order probably can't be improved much.");
+	} else {
+		fmt::print("Original allied warband...\n");
+		fmt::print(fmt::fg(fmt::color::indian_red), "{}\n", board[0]);
+		fmt::print("...could be improved to...\n");
+		fmt::print(fmt::fg(fmt::color::lime_green), "{}\n", best_board[0]);
+	}
 }
 
 auto main() -> int {
 	fuzz_test();
+	murlocs_vs_dragons();
 
 	return 0;
 }

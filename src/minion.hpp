@@ -5,6 +5,7 @@
 #include "tiers.hpp"
 #include "tribes.hpp"
 
+#include <compare>
 #include <ostream>
 #include <unordered_map>
 #include <vector>
@@ -27,6 +28,8 @@ namespace hsbg {
 		std::vector<dr> drs;
 
 		minion(hsbg::id id, hsbg::stats stats);
+
+		auto operator==(minion const&) const -> bool = default;
 
 		auto alive() const -> bool;
 		auto dying() const -> bool;
