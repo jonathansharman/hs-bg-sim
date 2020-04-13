@@ -63,7 +63,14 @@ namespace hsbg {
 		_liveness = liveness::dead;
 	}
 
+	auto stats::poison() -> void {
+		_poisoned = true;
+	}
+	auto stats::poisoned() -> bool {
+		return _poisoned;
+	}
+
 	auto stats::maybe_resurrect() -> void {
-		if (_health > 0 && !poisoned) { _liveness = liveness::alive; }
+		if (dying() && _health > 0 && !_poisoned) { _liveness = liveness::alive; }
 	}
 }

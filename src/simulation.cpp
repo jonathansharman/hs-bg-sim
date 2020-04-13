@@ -679,7 +679,7 @@ namespace hsbg {
 			}
 			// Determine if the target is now dying.
 			if (source->poisonous) {
-				target->stats.poisoned = true;
+				target->stats.poison();
 				if (target->stats.alive()) { target->stats.make_dying(); }
 			}
 			if (target->stats.alive() && target->stats.health() <= 0) {

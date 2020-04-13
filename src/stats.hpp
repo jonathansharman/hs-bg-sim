@@ -4,8 +4,6 @@
 
 namespace hsbg {
 	struct stats {
-		bool poisoned = false;
-
 		stats(int attack, int health);
 
 		auto operator==(stats const&) const -> bool = default;
@@ -31,6 +29,9 @@ namespace hsbg {
 		auto make_dying() -> void;
 		auto make_dead() -> void;
 
+		auto poison() -> void;
+		auto poisoned() -> bool;
+
 	private:
 		enum class liveness { alive, dying, dead };
 
@@ -39,6 +40,7 @@ namespace hsbg {
 		int _max_health;
 
 		liveness _liveness = liveness::alive;
+		bool _poisoned = false;
 
 		/// Marks alive if not poisoned and health is positive. Should be called whenever health is restored.
 		auto maybe_resurrect() -> void;

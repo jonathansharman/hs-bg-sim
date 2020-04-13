@@ -97,8 +97,31 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 	}
 }
 
+auto demons_vs_exodia(int n_trials = 1'000'000) {
+	board const board{//
+		warband{//
+			create(id::imprisoner).with_stats({9, 10}),
+			create(id::fiendish_servant, true).with_stats({21, 22}),
+			create(id::voidlord).with_stats({11, 17}),
+			create(id::malganis).with_stats({12, 10}),
+			create(id::soul_juggler, true),
+			create(id::soul_juggler).with_stats({4, 4})},
+		warband{//
+			create(id::unstable_ghoul, true),
+			create(id::kaboom_bot),
+			create(id::kaboom_bot).with_attack(4),
+			create(id::rat_pack, true),
+			create(id::spawn_of_nzoth, true),
+			create(id::goldrinn_the_great_wolf),
+			create(id::baron_rivendare)}};
+	pretty_print(simulate(board, n_trials));
+	fmt::print("Sample combat:\n");
+	simulate(board, 1, true);
+}
+
 auto main() -> int {
 	fuzz_test();
-	too_many_minions_test();
+	demons_vs_exodia();
+
 	return 0;
 }
