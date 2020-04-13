@@ -17,6 +17,7 @@ namespace hsbg {
 	auto stats::set_health(int health) -> void {
 		_max_health = std::max(0, health);
 		_health = _max_health;
+		maybe_resurrect();
 	}
 	auto stats::set_attack(int attack) -> void {
 		_attack = std::max(0, attack);
@@ -33,13 +34,36 @@ namespace hsbg {
 	}
 	auto stats::restore_health(int amount) -> void {
 		_health = std::min(_max_health, _health + amount);
+		maybe_resurrect();
 	}
 	auto stats::buff_health(int amount) -> void {
 		_max_health += amount;
 		_health += amount;
+		maybe_resurrect();
 	}
 	auto stats::debuff_health(int amount) -> void {
 		_max_health -= amount;
 		_health = std::min(_health, _max_health);
+	}
+
+	auto stats::alive() const -> bool {
+		return _liveness == liveness::alive;
+	}
+	auto stats::dying() const -> bool {
+		return _liveness == liveness::dying;
+	}
+	auto stats::dead() const -> bool {
+		return _liveness == liveness::dead;
+	}
+
+	auto stats::make_dying() -> void {
+		_liveness = liveness::dying;
+	}
+	auto stats::make_dead() -> void {
+		_liveness = liveness::dead;
+	}
+
+	auto stats::maybe_resurrect() -> void {
+		if (_health > 0 && !poisoned) { _liveness = liveness::alive; }
 	}
 }

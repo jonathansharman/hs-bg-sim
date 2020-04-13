@@ -34,7 +34,7 @@ namespace hsbg {
 		}
 
 		auto choose_alive(warband& wb) -> std::optional<wb_it> {
-			return choose(filtered_its(wb, [](minion const& m) { return m.alive(); }));
+			return choose(filtered_its(wb, [](minion const& m) { return m.stats.alive(); }));
 		}
 
 		/// Simulates HS BG combat.
@@ -141,14 +141,14 @@ namespace hsbg {
 				}
 				// Search from current attacker to the right.
 				for (wb_it attacker = _current_attackers[active_wb_idx]; attacker != _board[active_wb_idx].end(); ++attacker) {
-					if (attacker->alive() && attacker->stats.attack() > 0) {
+					if (attacker->stats.alive() && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
 				}
 				// No viable attackers found towards the right. Wrap back around.
 				for (wb_it attacker = _board[active_wb_idx].begin(); attacker != _current_attackers[active_wb_idx]; ++attacker) {
-					if (attacker->alive() && attacker->stats.attack() > 0) {
+					if (attacker->stats.alive() && attacker->stats.attack() > 0) {
 						_current_attackers[active_wb_idx] = std::next(attacker);
 						return attacker;
 					}
@@ -161,7 +161,7 @@ namespace hsbg {
 			if (o_attacker) {
 				auto const attacker = *o_attacker;
 				current_warband_passed = false;
-				for (int i = 0; i < attacker->attack_count && attacker->alive(); ++i) {
+				for (int i = 0; i < attacker->attack_count && attacker->stats.alive(); ++i) {
 					auto const o_target = choose_target(attacker);
 					if (o_target) {
 						attack(attacker, *o_target);
@@ -173,7 +173,7 @@ namespace hsbg {
 					warband& wb = _board[i];
 					wb_it& current_attacker = _current_attackers[i];
 					for (auto it = wb.begin(); it != wb.end();) {
-						if (it->dead()) {
+						if (it->stats.dead()) {
 							// If the current attacker has died, need to move the current attacker forward by one.
 							if (it == current_attacker) {
 								++current_attacker;
@@ -243,7 +243,8 @@ namespace hsbg {
 		minion summoned,
 		warband const& summoned_by,
 		std::unordered_set<minion*> khadgars) -> wb_it { //
-		auto const live_count = std::count_if(allies.begin(), allies.end(), [](minion const& m) { return m.alive(); });
+		auto const live_count = std::count_if(
+			allies.begin(), allies.end(), [](minion const& m) { return m.stats.alive(); });
 		if (live_count < 7) {
 			// Apply auras.
 			for (auto const& ally : allies) {
@@ -366,7 +367,7 @@ namespace hsbg {
 			case id::selfless_hero: {
 				// Give divine shield to one (golden: two) random minions without divine shield already.
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
-					auto recipient = choose(filtered_its(allies, [](minion const& m) { return m.alive() && !m.ds; }));
+					auto recipient = choose(filtered_its(allies, [](minion const& m) { return m.stats.alive() && !m.ds; }));
 					if (recipient) { (*recipient)->ds = true; }
 				}
 				break;
@@ -678,11 +679,11 @@ namespace hsbg {
 			}
 			// Determine if the target is now dying.
 			if (source->poisonous) {
-				target->poisoned = true;
-				if (target->alive()) { target->make_dying(); }
+				target->stats.poisoned = true;
+				if (target->stats.alive()) { target->stats.make_dying(); }
 			}
-			if (target->alive() && target->stats.health() <= 0) {
-				target->make_dying();
+			if (target->stats.alive() && target->stats.health() <= 0) {
+				target->stats.make_dying();
 				if (can_overkill && target->stats.health() < 0) {
 					// Trigger overkill effects.
 					switch (source->id) {
@@ -691,7 +692,7 @@ namespace hsbg {
 							auto const leftmost_living = std::find_if( //
 								allies.begin(),
 								allies.end(),
-								[](minion const& ally) { return ally.alive(); });
+								[](minion const& ally) { return ally.stats.alive(); });
 							if (leftmost_living != allies.end()) {
 								take_damage_from(leftmost_living, source->golden ? 6 : 3, source);
 							}
@@ -707,7 +708,7 @@ namespace hsbg {
 					}
 				}
 			}
-			if (!target->alive()) {
+			if (!target->stats.alive()) {
 				// Trigger on-kill effects.
 				for (auto it = enemies.begin(); it != enemies.end(); ++it) {
 					if (it->id == id::waxrider_togwaggle && get_tribe(*source) == tribe::dragon) {
@@ -753,88 +754,82 @@ namespace hsbg {
 			/// @todo How is it determined which player's minion deaths resolve first?
 			for (auto it = wb.begin(); it != wb.end(); ++it) {
 				// Only interested in minions marked as dying.
-				if (!it->dying()) { continue; }
-				// Check if the minion is actually dead.
-				if (it->stats.health() <= 0 || it->poisoned) {
-					// A minion has died. Will need to perform death resolution again.
-					repeat = true;
-					// Trigger on-other-death effects of other minions.
-					for (auto& other_wb : _board) {
-						for (auto other_it = other_wb.begin(); other_it != other_wb.end(); ++other_it) {
-							if (&*other_it == &*it) { continue; }
-							switch (other_it->id) {
-								case id::old_murk_eye:
-									if (get_tribe(*it) == tribe::murloc) {
-										other_it->stats.debuff_attack(other_it->golden ? 2 : 1);
-									}
-									break;
-								case id::scavenging_hyena:
-									if (&other_wb == &wb && get_tribe(*it) == tribe::beast) {
-										bool const golden = other_it->golden;
-										other_it->stats.buff_attack(golden ? 4 : 2);
-										other_it->stats.buff_health(golden ? 2 : 1);
-									}
-									break;
-								case id::baron_rivendare:
-									//! @todo Trigger additional deathrattles.
-									break;
-								case id::junkbot:
-									if (&other_wb == &wb && get_tribe(*it) == tribe::mech) {
-										int const buff = other_it->golden ? 4 : 2;
-										other_it->stats.buff_attack(buff);
-										other_it->stats.buff_health(buff);
-									}
-									break;
-								default:
-									// No on-other-death effects.
-									break;
-							}
-						}
-					}
-					{ // Trigger this minion's deathrattles.
-						// Determine number of triggers based on presence of allied Baron Rivendares.
-						int const dr_count = std::reduce(wb.begin(), wb.end(), 1, [it](int acc, minion const& m) {
-							if (&m == &*it || m.id != id::baron_rivendare) { return acc; };
-							return std::max(acc, m.golden ? 3 : 2);
-						});
-						for (int i = 0; i < dr_count; ++i) {
-							trigger_dr(it);
-						}
-					}
-					// Remove any aura buffs this minion was giving.
-					switch (it->id) {
-						case id::murloc_warleader:
-							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-								if (ally != it && get_tribe(*ally) == tribe::murloc) { ally->stats.debuff_attack(2); }
-							}
-							break;
-						case id::siegebreaker:
-							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-								if (ally != it && get_tribe(*ally) == tribe::demon) { ally->stats.debuff_attack(1); }
-							}
-							break;
-						case id::malganis:
-							for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-								if (ally != it && get_tribe(*ally) == tribe::demon) {
-									ally->stats.debuff_attack(2);
-									ally->stats.debuff_health(2);
+				if (!it->stats.dying()) { continue; }
+				// A minion has died. Will need to perform death resolution again.
+				repeat = true;
+				// Trigger on-other-death effects of other minions.
+				for (auto& other_wb : _board) {
+					for (auto other_it = other_wb.begin(); other_it != other_wb.end(); ++other_it) {
+						if (&*other_it == &*it) { continue; }
+						switch (other_it->id) {
+							case id::old_murk_eye:
+								if (get_tribe(*it) == tribe::murloc) {
+									other_it->stats.debuff_attack(other_it->golden ? 2 : 1);
 								}
-							}
-							break;
-						default:
-							// No aura.
-							break;
+								break;
+							case id::scavenging_hyena:
+								if (&other_wb == &wb && get_tribe(*it) == tribe::beast) {
+									bool const golden = other_it->golden;
+									other_it->stats.buff_attack(golden ? 4 : 2);
+									other_it->stats.buff_health(golden ? 2 : 1);
+								}
+								break;
+							case id::baron_rivendare:
+								//! @todo Trigger additional deathrattles.
+								break;
+							case id::junkbot:
+								if (&other_wb == &wb && get_tribe(*it) == tribe::mech) {
+									int const buff = other_it->golden ? 4 : 2;
+									other_it->stats.buff_attack(buff);
+									other_it->stats.buff_health(buff);
+								}
+								break;
+							default:
+								// No on-other-death effects.
+								break;
+						}
 					}
-					// Trigger reborn, if present.
-					if (it->reborn) {
-						summon(wb, std::next(it), create(it->id, it->golden).with_reborn(false).with_health(1), wb, {});
-					}
-					// Mark as dead.
-					it->make_dead();
-				} else {
-					// The minion was brought back to life by a DR health buff.
-					it->make_alive();
 				}
+				{ // Trigger this minion's deathrattles.
+					// Determine number of triggers based on presence of allied Baron Rivendares.
+					int const dr_count = std::reduce(wb.begin(), wb.end(), 1, [it](int acc, minion const& m) {
+						if (&m == &*it || m.id != id::baron_rivendare) { return acc; };
+						return std::max(acc, m.golden ? 3 : 2);
+					});
+					for (int i = 0; i < dr_count; ++i) {
+						trigger_dr(it);
+					}
+				}
+				// Remove any aura buffs this minion was giving.
+				switch (it->id) {
+					case id::murloc_warleader:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::murloc) { ally->stats.debuff_attack(2); }
+						}
+						break;
+					case id::siegebreaker:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::demon) { ally->stats.debuff_attack(1); }
+						}
+						break;
+					case id::malganis:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::demon) {
+								ally->stats.debuff_attack(2);
+								ally->stats.debuff_health(2);
+							}
+						}
+						break;
+					default:
+						// No aura.
+						break;
+				}
+				// Trigger reborn, if present.
+				if (it->reborn) {
+					summon(wb, std::next(it), create(it->id, it->golden).with_reborn(false).with_health(1), wb, {});
+				}
+				// Mark as dead.
+				it->stats.make_dead();
 			}
 		}
 		if (repeat) { resolve_deaths(); }

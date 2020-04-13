@@ -17,7 +17,6 @@ namespace hsbg {
 		id id;
 		stats stats;
 
-		bool poisoned = false;
 		bool golden = false;
 		bool taunt = false;
 		bool ds = false;
@@ -31,14 +30,6 @@ namespace hsbg {
 
 		auto operator==(minion const&) const -> bool = default;
 
-		auto alive() const -> bool;
-		auto dying() const -> bool;
-		auto dead() const -> bool;
-
-		auto make_alive() -> void;
-		auto make_dying() -> void;
-		auto make_dead() -> void;
-
 		[[nodiscard]] auto with_stats(hsbg::stats stats) -> minion&;
 		[[nodiscard]] auto with_attack(int attack) -> minion&;
 		[[nodiscard]] auto with_health(int health) -> minion&;
@@ -49,11 +40,6 @@ namespace hsbg {
 		[[nodiscard]] auto with_windfury() -> minion&;
 		[[nodiscard]] auto with_megawindfury() -> minion&;
 		[[nodiscard]] auto with_dr(dr dr) -> minion&;
-
-	private:
-		enum class liveness { alive, dying, dead };
-
-		liveness _liveness = liveness::alive;
 	};
 
 	auto operator<<(std::ostream& out, minion const& m) -> std::ostream&;
