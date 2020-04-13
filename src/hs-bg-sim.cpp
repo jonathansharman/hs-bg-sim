@@ -99,7 +99,5 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 
 auto main() -> int {
 	fuzz_test();
-	murlocs_vs_dragons();
-
 	return 0;
 }

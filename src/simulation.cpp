@@ -97,7 +97,7 @@ namespace hsbg {
 				minion const& summoned,
 				warband const& summoned_by) -> void;
 
-			/// Kills the minion at the given location.
+			/// Triggers the deathrattle of the given minion.
 			auto trigger_dr(wb_it dying_it) -> void;
 
 			/// Chooses a random attack target based on the given attacking warband and minion indices.
@@ -791,8 +791,16 @@ namespace hsbg {
 							}
 						}
 					}
-					// Trigger this minion's deathrattles.
-					trigger_dr(it);
+					{ // Trigger this minion's deathrattles.
+						// Determine number of triggers based on presence of allied Baron Rivendares.
+						int const dr_count = std::reduce(wb.begin(), wb.end(), 1, [it](int acc, minion const& m) {
+							if (&m == &*it || m.id != id::baron_rivendare) { return acc; };
+							return std::max(acc, m.golden ? 3 : 2);
+						});
+						for (int i = 0; i < dr_count; ++i) {
+							trigger_dr(it);
+						}
+					}
 					// Remove any aura buffs this minion was giving.
 					switch (it->id) {
 						case id::murloc_warleader:
