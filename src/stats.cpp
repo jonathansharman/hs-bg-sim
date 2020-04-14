@@ -49,17 +49,23 @@ namespace hsbg {
 	auto stats::alive() const -> bool {
 		return _liveness == liveness::alive;
 	}
-	auto stats::dying() const -> bool {
-		return _liveness == liveness::dying;
+	auto stats::marked_for_death() const -> bool {
+		return _liveness == liveness::marked_for_death;
+	}
+	auto stats::will_trigger_dr() const -> bool {
+		return _liveness == liveness::will_trigger_dr;
 	}
 	auto stats::dead() const -> bool {
 		return _liveness == liveness::dead;
 	}
 
-	auto stats::make_dying() -> void {
-		_liveness = liveness::dying;
+	auto stats::mark_for_death() -> void {
+		_liveness = liveness::marked_for_death;
 	}
-	auto stats::make_dead() -> void {
+	auto stats::mark_will_trigger_dr() -> void {
+		_liveness = liveness::will_trigger_dr;
+	}
+	auto stats::mark_dead() -> void {
 		_liveness = liveness::dead;
 	}
 
@@ -71,6 +77,6 @@ namespace hsbg {
 	}
 
 	auto stats::maybe_resurrect() -> void {
-		if (dying() && _health > 0 && !_poisoned) { _liveness = liveness::alive; }
+		if (marked_for_death() && _health > 0 && !_poisoned) { _liveness = liveness::alive; }
 	}
 }

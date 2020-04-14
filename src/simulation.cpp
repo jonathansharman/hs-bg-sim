@@ -1,5 +1,6 @@
 #include "simulation.hpp"
 
+#include "names.hpp"
 #include "random.hpp"
 #include "tiers.hpp"
 #include "tribes.hpp"
@@ -33,7 +34,7 @@ namespace hsbg {
 			return its.empty() ? std::nullopt : std::make_optional(rand_element(its));
 		}
 
-		auto choose_alive(warband& wb) -> std::optional<wb_it> {
+		auto choose_living(warband& wb) -> std::optional<wb_it> {
 			return choose(filtered_its(wb, [](minion const& m) { return m.stats.alive(); }));
 		}
 
@@ -51,6 +52,9 @@ namespace hsbg {
 		private:
 			/// Current board state.
 			board _board;
+
+			/// Whether to trace this simulation.
+			bool _trace;
 
 			/// Tracks which minion should attack next, if possible.
 			std::array<wb_it, 2> _current_attackers;
@@ -112,11 +116,16 @@ namespace hsbg {
 
 			/// Handles deathrattles, reborn, etc.
 			auto resolve_deaths() -> void;
+
+			/// Reports that a minion's effect has triggered, if tracing is enabled.
+			auto report_trigger(minion const& m) -> void {
+				if (_trace) { fmt::print("{} triggers.\n", get_name(m)); }
+			}
 		};
 	}
 
-	simulation::simulation(board board, bool trace) : _board{std::move(board)} {
-		if (trace) { pretty_print(_board); }
+	simulation::simulation(board board, bool trace) : _board{std::move(board)}, _trace{trace} {
+		if (_trace) { pretty_print(_board); }
 
 		std::size_t starting_wb =
 			(_board[0].size() > _board[1].size() || _board[0].size() == _board[1].size() && rand_int(0, 1)) ? 0 : 1;
@@ -168,23 +177,24 @@ namespace hsbg {
 						resolve_deaths();
 					}
 				}
-				// Remove dead minions.
-				for (std::size_t i = 0; i < 2; ++i) {
-					warband& wb = _board[i];
-					wb_it& current_attacker = _current_attackers[i];
-					for (auto it = wb.begin(); it != wb.end();) {
-						if (it->stats.dead()) {
-							// If the current attacker has died, need to move the current attacker forward by one.
-							if (it == current_attacker) {
-								++current_attacker;
-								if (current_attacker == wb.end()) { current_attacker = wb.begin(); }
-							}
-							// Erase the dead minion.
-							it = wb.erase(it);
-						} else {
-							// Go to next minion.
-							++it;
+			}
+
+			// Remove dead minions.
+			for (std::size_t i = 0; i < 2; ++i) {
+				warband& wb = _board[i];
+				wb_it& current_attacker = _current_attackers[i];
+				for (auto it = wb.begin(); it != wb.end();) {
+					if (it->stats.dead()) {
+						// If the current attacker has died, need to move the current attacker forward by one.
+						if (it == current_attacker) {
+							++current_attacker;
+							if (current_attacker == wb.end()) { current_attacker = wb.begin(); }
 						}
+						// Erase the dead minion.
+						it = wb.erase(it);
+					} else {
+						// Go to next minion.
+						++it;
 					}
 				}
 			}
@@ -192,7 +202,7 @@ namespace hsbg {
 			// Switch control to the other warband.
 			active_wb_idx = 1 - active_wb_idx;
 
-			if (trace) { pretty_print(_board); }
+			if (_trace) { pretty_print(_board); }
 
 			// End combat if both warbands are unable to attack in a row.
 			if (current_warband_passed && previous_warband_passed) {
@@ -242,87 +252,104 @@ namespace hsbg {
 		wb_it target,
 		minion summoned,
 		warband const& summoned_by,
-		std::unordered_set<minion*> khadgars) -> wb_it { //
-		auto const live_count = std::count_if(
-			allies.begin(), allies.end(), [](minion const& m) { return m.stats.alive(); });
-		if (live_count < 7) {
-			// Apply auras.
-			for (auto const& ally : allies) {
-				switch (ally.id) {
-					case id::murloc_warleader:
-						if (is_murloc(summoned)) { summoned.stats.buff_attack(2); }
+		std::unordered_set<minion*> khadgars) -> wb_it //
+	{
+		if (_trace) { fmt::print("Trying to summon {}...", get_name(summoned)); }
+		{ // Check that there's room.
+			auto const live_count = std::count_if(
+				allies.begin(), allies.end(), [](minion const& m) { return m.stats.alive(); });
+			if (live_count >= 7) {
+				if (_trace) { fmt::print(" Too many minions.\n"); }
+				return target;
+			}
+		}
+		// Apply auras from allies.
+		for (auto const& ally : allies) {
+			switch (ally.id) {
+				case id::murloc_warleader:
+					if (is_murloc(summoned)) { summoned.stats.buff_attack(2); }
+					break;
+				case id::siegebreaker:
+					if (is_demon(summoned)) { summoned.stats.buff_attack(1); }
+					break;
+				case id::malganis:
+					if (is_demon(summoned)) {
+						summoned.stats.buff_attack(2);
+						summoned.stats.buff_health(2);
+					}
+					break;
+				default:
+					// Ally has no aura.
+					break;
+			}
+		}
+
+		// Trigger on-summon effects.
+		for (auto& wb : _board) {
+			bool const allied = &wb == &allies;
+			for (auto it = wb.begin(); it != wb.end(); ++it) {
+				switch (it->id) {
+					case id::old_murk_eye:
+						// Gains 1 (golden: 2) attack when a new murloc appears anywhere.
+						if (is_murloc(summoned)) {
+							if (_trace) { fmt::print("Old Murk-Eye gains attack.\n"); }
+							it->stats.buff_attack(it->golden ? 2 : 1);
+						}
 						break;
-					case id::siegebreaker:
-						if (is_demon(summoned)) { summoned.stats.buff_attack(1); }
+					case id::cobalt_guardian:
+						// Gains divine shield when friendly mechs are summoned.
+						if (allied && is_mech(summoned)) {
+							report_trigger(*it);
+							it->ds = true;
+						}
 						break;
-					case id::malganis:
-						if (is_demon(summoned)) {
-							summoned.stats.buff_attack(2);
-							summoned.stats.buff_health(2);
+					case id::deflect_o_bot:
+						// Gains divine shield and +1 (golden: +2) attack when friendly mechs are summoned.
+						if (allied && is_mech(summoned)) {
+							report_trigger(*it);
+							it->stats.buff_attack(it->golden ? 2 : 1);
+							it->ds = true;
+						}
+						break;
+					case id::khadgar: {
+						// Khadgar triggers summons twice (golden: three times) if summoned by a friendly source.
+						// Each Khadgar on the board can only contibute additional summons once per normal summon.
+						auto& khadgar_allies = get_allies(it);
+						if (&summoned_by == &khadgar_allies && khadgars.find(&*it) == khadgars.end()) {
+							for (int i = 0; i < (it->golden ? 2 : 1); ++i) {
+								/// @todo Look up correct rules for where to put Khadgar summons.
+								report_trigger(*it);
+								khadgars.insert(&*it);
+								summon(allies, target, summoned, khadgar_allies, khadgars);
+							}
+						}
+						break;
+					}
+					case id::pack_leader:
+						// Gives friendly summoned beasts +3 attack (golden: +6 attack).
+						if (allied && is_beast(summoned)) {
+							report_trigger(*it);
+							summoned.stats.buff_attack(it->golden ? 6 : 3);
+						}
+						break;
+					case id::mama_bear:
+						// Gives friendly summoned beasts +4/+4 (golden: +8/+8).
+						if (allied && is_beast(summoned)) {
+							report_trigger(*it);
+							int const buff = it->golden ? 8 : 4;
+							summoned.stats.buff_attack(buff);
+							summoned.stats.buff_health(buff);
 						}
 						break;
 					default:
-						// Ally has no aura.
+						// No on-summon effect.
 						break;
 				}
 			}
-
-			// Trigger on-summon effects.
-			for (auto& wb : _board) {
-				bool const allied = &wb == &allies;
-				for (auto it = wb.begin(); it != wb.end(); ++it) {
-					switch (it->id) {
-						case id::old_murk_eye:
-							// Gains 1 (golden: 2) attack when a new murloc appears anywhere.
-							if (is_murloc(summoned)) { it->stats.buff_attack(it->golden ? 2 : 1); }
-							break;
-						case id::cobalt_guardian:
-							// Gains divine shield when friendly mechs are summoned.
-							if (allied && is_mech(summoned)) { it->ds = true; }
-							break;
-						case id::deflect_o_bot:
-							// Gains divine shield and +1 (golden: +2) attack when friendly mechs are summoned.
-							if (allied && is_mech(summoned)) {
-								it->stats.buff_attack(it->golden ? 2 : 1);
-								it->ds = true;
-							}
-							break;
-						case id::khadgar: {
-							// Khadgar triggers summons twice (golden: three times) if summoned by a friendly source.
-							// Each Khadgar on the board can only contibute additional summons once per normal summon.
-							auto& khadgar_allies = get_allies(it);
-							if (&summoned_by == &khadgar_allies && khadgars.find(&*it) == khadgars.end()) {
-								for (int i = 0; i < (it->golden ? 2 : 1); ++i) {
-									/// @todo Look up correct rules for where to put Khadgar summons.
-									khadgars.insert(&*it);
-									summon(allies, target, summoned, khadgar_allies, khadgars);
-								}
-							}
-							break;
-						}
-						case id::pack_leader:
-							// Gives friendly summoned beasts +3 attack (golden: +6 attack).
-							if (allied && is_beast(summoned)) { summoned.stats.buff_attack(it->golden ? 6 : 3); }
-							break;
-						case id::mama_bear:
-							// Gives friendly summoned beasts +4/+4 (golden: +8/+8).
-							if (allied && is_beast(summoned)) {
-								int const buff = it->golden ? 8 : 4;
-								summoned.stats.buff_attack(buff);
-								summoned.stats.buff_health(buff);
-							}
-							break;
-						default:
-							// No on-summon effect.
-							break;
-					}
-				}
-			}
-			// Insert the summoned minion.
-			return std::next(allies.insert(target, summoned));
-		} else {
-			return target;
 		}
+		if (_trace) { fmt::print(" Success.\n"); }
+		// Insert the summoned minion.
+		return std::next(allies.insert(target, summoned));
 	}
 
 	auto simulation::summon_n( //
@@ -356,16 +383,19 @@ namespace hsbg {
 		switch (dying_it->id) {
 			case id::fiendish_servant:
 				// Add attack to another random minion (golden: two minions, repeats allowed).
+				report_trigger(*dying_it);
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
-					auto recipient = choose_alive(allies);
+					auto recipient = choose_living(allies);
 					if (recipient) { (*recipient)->stats.buff_attack(dying_it->stats.attack()); }
 				}
 				break;
 			case id::mecharoo:
+				report_trigger(*dying_it);
 				summon(allies, std::next(dying_it), create(id::jo_e_bot, dying_it->golden), allies, {});
 				break;
 			case id::selfless_hero: {
 				// Give divine shield to one (golden: two) random minions without divine shield already.
+				report_trigger(*dying_it);
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
 					auto recipient = choose(filtered_its(allies, [](minion const& m) { return m.stats.alive() && !m.ds; }));
 					if (recipient) { (*recipient)->ds = true; }
@@ -373,26 +403,32 @@ namespace hsbg {
 				break;
 			}
 			case id::harvest_golem:
+				report_trigger(*dying_it);
 				summon(allies, std::next(dying_it), create(id::damaged_golem, dying_it->golden), allies, {});
 				break;
 			case id::imprisoner:
+				report_trigger(*dying_it);
 				summon(allies, std::next(dying_it), create(id::imp, dying_it->golden), allies, {});
 				break;
 			case id::kaboom_bot:
 				// Deal 4 damage to a random enemy minion (golden: twice).
+				report_trigger(*dying_it);
 				for (int i = 0; i < (dying_it->golden ? 2 : 1); ++i) {
-					if (auto target = choose_alive(get_enemies(allies))) { take_damage_from(*target, 4, dying_it); }
+					if (auto target = choose_living(get_enemies(allies))) { take_damage_from(*target, 4, dying_it); }
 				}
 				break;
 			case id::kindly_grandmother:
+				report_trigger(*dying_it);
 				summon(allies, std::next(dying_it), create(id::big_bad_wolf, dying_it->golden), allies, {});
 				break;
 			case id::rat_pack:
 				// Summon rats (golden: golden rats) equal to the rat pack's attack.
+				report_trigger(*dying_it);
 				summon_n(dying_it->stats.attack(), allies, std::next(dying_it), create(id::rat, dying_it->golden), allies);
 				break;
 			case id::spawn_of_nzoth:
 				// Give all other minions +1/+1 (golden: +2/+2).
+				report_trigger(*dying_it);
 				for (auto& ally : allies) {
 					int const buff = dying_it->golden ? 2 : 1;
 					if (&ally != &*dying_it) {
@@ -403,6 +439,7 @@ namespace hsbg {
 				break;
 			case id::unstable_ghoul:
 				// Deal 1 (golden: 2) damage to all other minions.
+				report_trigger(*dying_it);
 				for (auto& warband : _board) {
 					for (auto it = warband.begin(); it != warband.end(); ++it) {
 						if (&*it != &*dying_it) { take_damage_from(it, dying_it->golden ? 2 : 1, dying_it); }
@@ -411,6 +448,7 @@ namespace hsbg {
 				break;
 			case id::infested_wolf:
 				// Summon two spiders (golden: golden spiders).
+				report_trigger(*dying_it);
 				summon_n(2, allies, std::next(dying_it), create(id::spider, dying_it->golden), allies);
 				break;
 			case id::piloted_shredder: {
@@ -426,27 +464,33 @@ namespace hsbg {
 					id::scavenging_hyena,
 					id::unstable_ghoul,
 					id::khadgar};
+				report_trigger(*dying_it);
 				summon_n(
 					2, allies, std::next(dying_it), [] { return create(rand_element(two_costs)); }, allies);
 				break;
 			}
 			case id::replicating_menace:
 				// Summon three (golden: golden) microbots.
+				report_trigger(*dying_it);
 				summon_n(3, allies, std::next(dying_it), create(id::microbot, dying_it->golden), allies);
 				break;
 			case id::the_beast:
 				// Summon a 3/3 for the opponent (not affected by golden).
+				report_trigger(*dying_it);
 				summon(enemies, enemies.end(), create(id::finkle_einhorn), allies, {});
 				break;
 			case id::mechano_egg:
+				report_trigger(*dying_it);
 				summon(allies, std::next(dying_it), create(id::robosaur, dying_it->golden), allies, {});
 				break;
 			case id::savannah_highmane:
 				// Summon two (golden: golden) hyenas.
+				report_trigger(*dying_it);
 				summon_n(2, allies, std::next(dying_it), create(id::hyena, dying_it->golden), allies);
 				break;
 			case id::goldrinn_the_great_wolf:
 				// Give allied beasts +4/+4 (golden: +8/+8).
+				report_trigger(*dying_it);
 				for (auto ally = allies.begin(); ally != allies.end(); ++ally) {
 					int const buff = dying_it->golden ? 8 : 4;
 					if (ally != dying_it && get_tribe(*ally) == tribe::beast) {
@@ -457,6 +501,7 @@ namespace hsbg {
 				break;
 			case id::king_bagurgle:
 				// Give allied murlocs +2/+2 (golden: +4/+4).
+				report_trigger(*dying_it);
 				for (auto ally = allies.begin(); ally != allies.end(); ++ally) {
 					int const buff = dying_it->golden ? 4 : 2;
 					if (ally != dying_it && get_tribe(*ally) == tribe::murloc) {
@@ -486,6 +531,7 @@ namespace hsbg {
 					id::maexxna,
 					id::nadina_the_red,
 					id::zapp_slywick};
+				report_trigger(*dying_it);
 				summon_n(
 					dying_it->golden ? 2 : 1,
 					allies,
@@ -496,6 +542,7 @@ namespace hsbg {
 			}
 			case id::voidlord:
 				// Summon three (golden: golden) voidwalkers.
+				report_trigger(*dying_it);
 				summon_n(3, allies, std::next(dying_it), create(id::voidwalker, dying_it->golden), allies);
 				break;
 			case id::ghastcoiler: {
@@ -523,6 +570,7 @@ namespace hsbg {
 					id::voidlord,
 					id::kangors_apprentice,
 					id::nadina_the_red};
+				report_trigger(*dying_it);
 				summon_n(
 					dying_it->golden ? 4 : 2,
 					allies,
@@ -533,6 +581,7 @@ namespace hsbg {
 			}
 			case id::kangors_apprentice: {
 				// Summon up to two (golden: four) of the first friendly mechs that died this combat.
+				report_trigger(*dying_it);
 				auto const& dead_mechs = get_dead_mechs(allies);
 				int const count = std::min(static_cast<int>(dead_mechs.size()), dying_it->golden ? 4 : 2);
 				int i = 0;
@@ -550,6 +599,7 @@ namespace hsbg {
 			}
 			case id::nadina_the_red:
 				// Give allied dragons divine shield.
+				report_trigger(*dying_it);
 				for (auto ally = allies.begin(); ally != allies.end(); ++ally) {
 					if (ally != dying_it && get_tribe(*ally) == tribe::dragon) { ally->ds = true; }
 				}
@@ -562,12 +612,15 @@ namespace hsbg {
 		for (dr dr : dying_it->drs) {
 			switch (dr) {
 				case dr::microbots:
+					if (_trace) { fmt::print("Microbots deathrattle triggers.\n"); }
 					summon_n(3, allies, std::next(dying_it), create(id::microbot), allies);
 					break;
 				case dr::golden_microbots:
+					if (_trace) { fmt::print("Golden Microbots deathrattle triggers.\n"); }
 					summon_n(3, allies, std::next(dying_it), create(id::microbot, true), allies);
 					break;
 				case dr::plants:
+					if (_trace) { fmt::print("Plants deathrattle triggers.\n"); }
 					summon_n(2, allies, std::next(dying_it), create(id::plant), allies);
 					break;
 			}
@@ -612,6 +665,7 @@ namespace hsbg {
 	}
 
 	auto simulation::take_damage_from(wb_it target, int damage, wb_it source, bool can_overkill) -> void {
+		if (_trace) { fmt::print("{} takes {} damage from {}.\n", get_name(*target), damage, get_name(*source)); }
 		if (damage == 0) {
 			// Dealing zero damage does absolutely nothing.
 			return;
@@ -625,15 +679,18 @@ namespace hsbg {
 				if (&ally != &*target) {
 					switch (ally.id) {
 						case id::bolvar_fireblood:
+							report_trigger(ally);
 							ally.stats.buff_attack(ally.golden ? 4 : 2);
 							break;
 						case id::drakonid_enforcer: {
+							report_trigger(ally);
 							int const buff = ally.golden ? 4 : 2;
 							ally.stats.buff_attack(buff);
 							ally.stats.buff_health(buff);
 							break;
 						}
 						case id::holy_mackerel:
+							report_trigger(ally);
 							ally.ds = true;
 							break;
 						default:
@@ -647,12 +704,15 @@ namespace hsbg {
 			// Trigger on-damage effects.
 			switch (target->id) {
 				case id::imp_gang_boss:
+					report_trigger(*target);
 					summon(allies, std::next(target), create(id::imp, target->golden), allies, {});
 					break;
 				case id::security_rover:
+					report_trigger(*target);
 					summon(allies, std::next(target), create(id::guard_bot, target->golden), allies, {});
 					break;
 				case id::imp_mama: {
+					report_trigger(*target);
 					// Summon one (golden: two) random demons. Cannot summon itself.
 					static id imp_mama_summons[] = {//
 						id::fiendish_servant,
@@ -680,15 +740,16 @@ namespace hsbg {
 			// Determine if the target is now dying.
 			if (source->poisonous) {
 				target->stats.poison();
-				if (target->stats.alive()) { target->stats.make_dying(); }
+				if (target->stats.alive()) { target->stats.mark_for_death(); }
 			}
 			if (target->stats.alive() && target->stats.health() <= 0) {
-				target->stats.make_dying();
+				target->stats.mark_for_death();
 				if (can_overkill && target->stats.health() < 0) {
 					// Trigger overkill effects.
 					switch (source->id) {
 						case id::herald_of_flame: {
 							// Deal damage to left-most living minion in the target's warband.
+							report_trigger(*source);
 							auto const leftmost_living = std::find_if( //
 								allies.begin(),
 								allies.end(),
@@ -699,6 +760,7 @@ namespace hsbg {
 							break;
 						}
 						case id::ironhide_direhorn: {
+							report_trigger(*source);
 							summon(enemies, std::next(source), create(id::ironhide_runt, source->golden), enemies, {});
 							break;
 						}
@@ -712,6 +774,7 @@ namespace hsbg {
 				// Trigger on-kill effects.
 				for (auto it = enemies.begin(); it != enemies.end(); ++it) {
 					if (it->id == id::waxrider_togwaggle && get_tribe(*source) == tribe::dragon) {
+						report_trigger(*it);
 						int const buff = it->golden ? 4 : 2;
 						it->stats.buff_attack(buff);
 						it->stats.buff_health(buff);
@@ -722,9 +785,11 @@ namespace hsbg {
 	}
 
 	auto simulation::attack(wb_it attacker, wb_it primary_target) -> void {
+		if (_trace) { fmt::print("{} attacks {}.\n", get_name(*attacker), get_name(*primary_target)); }
 		auto& enemies = get_allies(primary_target);
 		if (attacker->id == id::glyph_guardian) {
 			// Trigger Glyph Guardian effect.
+			report_trigger(*attacker);
 			attacker->stats.buff_attack((attacker->golden ? 2 : 1) * attacker->stats.attack());
 		}
 		// Deal damage.
@@ -750,11 +815,14 @@ namespace hsbg {
 
 	auto simulation::resolve_deaths() -> void {
 		bool repeat = false;
+
+		/// @todo How is it determined which player's minion deaths resolve first?
+
+		// Perform on-death effects and mark for deathrattle phase.
 		for (auto& wb : _board) {
-			/// @todo How is it determined which player's minion deaths resolve first?
 			for (auto it = wb.begin(); it != wb.end(); ++it) {
 				// Only interested in minions marked as dying.
-				if (!it->stats.dying()) { continue; }
+				if (!it->stats.marked_for_death()) { continue; }
 				// A minion has died. Will need to perform death resolution again.
 				repeat = true;
 				// Trigger on-other-death effects of other minions.
@@ -764,20 +832,31 @@ namespace hsbg {
 						switch (other_it->id) {
 							case id::old_murk_eye:
 								if (get_tribe(*it) == tribe::murloc) {
+									if (_trace) { fmt::print("Old Murk-Eye loses attack.\n"); }
 									other_it->stats.debuff_attack(other_it->golden ? 2 : 1);
 								}
 								break;
 							case id::scavenging_hyena:
+								report_trigger(*other_it);
 								if (&other_wb == &wb && get_tribe(*it) == tribe::beast) {
 									bool const golden = other_it->golden;
 									other_it->stats.buff_attack(golden ? 4 : 2);
 									other_it->stats.buff_health(golden ? 2 : 1);
 								}
 								break;
-							case id::baron_rivendare:
-								//! @todo Trigger additional deathrattles.
+							case id::soul_juggler:
+								report_trigger(*other_it);
+								if (&other_wb == &wb && get_tribe(*it) == tribe::demon) {
+									int const trigger_count = other_it->golden ? 2 : 1;
+									auto& enemies = get_enemies(wb);
+									for (int i = 0; i < trigger_count; ++i) {
+										auto o_target = choose_living(enemies);
+										if (o_target) { take_damage_from(*o_target, 3, other_it); }
+									}
+								}
 								break;
 							case id::junkbot:
+								report_trigger(*other_it);
 								if (&other_wb == &wb && get_tribe(*it) == tribe::mech) {
 									int const buff = other_it->golden ? 4 : 2;
 									other_it->stats.buff_attack(buff);
@@ -790,6 +869,46 @@ namespace hsbg {
 						}
 					}
 				}
+				// Remove any aura buffs this minion was giving.
+				switch (it->id) {
+					case id::murloc_warleader:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::murloc) {
+								if (_trace) { fmt::print("{} loses Murloc Warleader buff.\n", get_name(*ally)); }
+								ally->stats.debuff_attack(2);
+							}
+						}
+						break;
+					case id::siegebreaker:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::demon) {
+								if (_trace) { fmt::print("{} loses Siegebreaker buff.\n", get_name(*ally)); }
+								ally->stats.debuff_attack(1);
+							}
+						}
+						break;
+					case id::malganis:
+						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
+							if (ally != it && get_tribe(*ally) == tribe::demon) {
+								if (_trace) { fmt::print("{} loses Mal'Ganis buff.\n", get_name(*ally)); }
+								ally->stats.debuff_attack(2);
+								ally->stats.debuff_health(2);
+							}
+						}
+						break;
+					default:
+						// No aura.
+						break;
+				}
+				it->stats.mark_will_trigger_dr();
+			}
+		}
+		// Trigger deathrattles, reborn, etc. of dead minions.
+		for (auto& wb : _board) {
+			for (auto it = wb.begin(); it != wb.end(); ++it) {
+				// Only interested in minions in the deathrattle phase.
+				if (!it->stats.will_trigger_dr()) { continue; }
+				if (_trace) { fmt::print("{} dies.\n", get_name(it->id)); }
 				{ // Trigger this minion's deathrattles.
 					// Determine number of triggers based on presence of allied Baron Rivendares.
 					int const dr_count = std::reduce(wb.begin(), wb.end(), 1, [it](int acc, minion const& m) {
@@ -800,38 +919,16 @@ namespace hsbg {
 						trigger_dr(it);
 					}
 				}
-				// Remove any aura buffs this minion was giving.
-				switch (it->id) {
-					case id::murloc_warleader:
-						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-							if (ally != it && get_tribe(*ally) == tribe::murloc) { ally->stats.debuff_attack(2); }
-						}
-						break;
-					case id::siegebreaker:
-						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-							if (ally != it && get_tribe(*ally) == tribe::demon) { ally->stats.debuff_attack(1); }
-						}
-						break;
-					case id::malganis:
-						for (auto ally = wb.begin(); ally != wb.end(); ++ally) {
-							if (ally != it && get_tribe(*ally) == tribe::demon) {
-								ally->stats.debuff_attack(2);
-								ally->stats.debuff_health(2);
-							}
-						}
-						break;
-					default:
-						// No aura.
-						break;
-				}
 				// Trigger reborn, if present.
 				if (it->reborn) {
+					if (_trace) { fmt::print("{} is reborn.\n", get_name(*it)); }
 					summon(wb, std::next(it), create(it->id, it->golden).with_reborn(false).with_health(1), wb, {});
 				}
-				// Mark as dead.
-				it->stats.make_dead();
+				// Mark dead.
+				it->stats.mark_dead();
 			}
 		}
+		// Repeat, if necessary.
 		if (repeat) { resolve_deaths(); }
 	}
 

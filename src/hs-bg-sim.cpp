@@ -81,9 +81,9 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 			create(id::kalecgos_arcane_aspect).with_stats({25, 33}),
 			create(id::zoobot).with_stats({4, 5}),
 			create(id::drakonid_enforcer, true).with_stats({28, 31})}};
-	pretty_print(simulate(board, n_trials));
 	fmt::print("Sample combat:\n");
 	simulate(board, 1, true);
+	pretty_print(simulate(board, n_trials));
 
 	fmt::print("Optimizing allied warband order for max net wins...\n");
 	auto const best_board = optimize_ally_order(board, 1'000, goal::max_net_wins);
@@ -97,12 +97,13 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 	}
 }
 
-auto demons_vs_exodia(int n_trials = 1'000'000) {
+auto demons_vs_exodia(int n_trials = 100'000) {
 	board const board{//
 		warband{//
 			create(id::imprisoner).with_stats({9, 10}),
 			create(id::fiendish_servant, true).with_stats({21, 22}),
 			create(id::voidlord).with_stats({11, 17}),
+			create(id::malganis).with_stats({12, 10}),
 			create(id::malganis).with_stats({12, 10}),
 			create(id::soul_juggler, true),
 			create(id::soul_juggler).with_stats({4, 4})},
@@ -114,14 +115,15 @@ auto demons_vs_exodia(int n_trials = 1'000'000) {
 			create(id::spawn_of_nzoth, true),
 			create(id::goldrinn_the_great_wolf),
 			create(id::baron_rivendare)}};
-	pretty_print(simulate(board, n_trials));
 	fmt::print("Sample combat:\n");
 	simulate(board, 1, true);
+	pretty_print(simulate(board, n_trials));
 }
 
 auto main() -> int {
 	fuzz_test();
 	demons_vs_exodia();
+	too_many_minions_test();
 
 	return 0;
 }

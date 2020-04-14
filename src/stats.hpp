@@ -23,17 +23,19 @@ namespace hsbg {
 		auto debuff_health(int amount) -> void;
 
 		auto alive() const -> bool;
-		auto dying() const -> bool;
+		auto marked_for_death() const -> bool;
+		auto will_trigger_dr() const -> bool;
 		auto dead() const -> bool;
 
-		auto make_dying() -> void;
-		auto make_dead() -> void;
+		auto mark_for_death() -> void;
+		auto mark_will_trigger_dr() -> void;
+		auto mark_dead() -> void;
 
 		auto poison() -> void;
 		auto poisoned() -> bool;
 
 	private:
-		enum class liveness { alive, dying, dead };
+		enum class liveness { alive, marked_for_death, will_trigger_dr, dead };
 
 		int _attack;
 		int _health;
