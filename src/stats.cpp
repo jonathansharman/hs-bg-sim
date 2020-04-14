@@ -17,6 +17,7 @@ namespace hsbg {
 	auto stats::set_health(int health) -> void {
 		_max_health = std::max(0, health);
 		_health = _max_health;
+		if (alive() && _health <= 0) { _liveness = liveness::marked_for_death; }
 		maybe_resurrect();
 	}
 	auto stats::set_attack(int attack) -> void {
@@ -29,8 +30,16 @@ namespace hsbg {
 		_attack = std::max(0, _attack - amount);
 	}
 
-	auto stats::lose_health(int amount) -> void {
+	auto stats::lose_health(int amount) -> lose_health_result {
 		_health -= amount;
+		if (alive() && _health <= 0) { _liveness = liveness::marked_for_death; }
+		if (_health > 0) {
+			return lose_health_result::survived;
+		} else if (_health < 0) {
+			return lose_health_result::overkilled;
+		} else {
+			return lose_health_result::killed;
+		}
 	}
 	auto stats::restore_health(int amount) -> void {
 		_health = std::min(_max_health, _health + amount);
@@ -59,9 +68,6 @@ namespace hsbg {
 		return _liveness == liveness::dead;
 	}
 
-	auto stats::mark_for_death() -> void {
-		_liveness = liveness::marked_for_death;
-	}
 	auto stats::mark_will_trigger_dr() -> void {
 		_liveness = liveness::will_trigger_dr;
 	}
@@ -71,6 +77,7 @@ namespace hsbg {
 
 	auto stats::poison() -> void {
 		_poisoned = true;
+		if (alive()) { _liveness = liveness::marked_for_death; }
 	}
 	auto stats::poisoned() -> bool {
 		return _poisoned;

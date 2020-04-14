@@ -3,6 +3,8 @@
 #include <algorithm>
 
 namespace hsbg {
+	enum class lose_health_result { survived, killed, overkilled };
+
 	struct stats {
 		stats(int attack, int health);
 
@@ -17,7 +19,7 @@ namespace hsbg {
 		auto debuff_attack(int amount) -> void;
 
 		auto set_health(int health) -> void;
-		auto lose_health(int amount) -> void;
+		auto lose_health(int amount) -> lose_health_result;
 		auto restore_health(int amount) -> void;
 		auto buff_health(int amount) -> void;
 		auto debuff_health(int amount) -> void;
@@ -27,7 +29,6 @@ namespace hsbg {
 		auto will_trigger_dr() const -> bool;
 		auto dead() const -> bool;
 
-		auto mark_for_death() -> void;
 		auto mark_will_trigger_dr() -> void;
 		auto mark_dead() -> void;
 

@@ -700,7 +700,7 @@ namespace hsbg {
 				}
 			}
 		} else {
-			target->stats.lose_health(damage);
+			auto lose_health_result = target->stats.lose_health(damage);
 			// Trigger on-damage effects.
 			switch (target->id) {
 				case id::imp_gang_boss:
@@ -737,41 +737,33 @@ namespace hsbg {
 					// No on-damage effects.
 					break;
 			}
-			// Determine if the target is now dying.
-			if (source->poisonous) {
-				target->stats.poison();
-				if (target->stats.alive()) { target->stats.mark_for_death(); }
-			}
-			if (target->stats.alive() && target->stats.health() <= 0) {
-				target->stats.mark_for_death();
-				if (can_overkill && target->stats.health() < 0) {
-					// Trigger overkill effects.
-					switch (source->id) {
-						case id::herald_of_flame: {
-							// Deal damage to left-most living minion in the target's warband.
-							report_trigger(*source);
-							auto const leftmost_living = std::find_if( //
-								allies.begin(),
-								allies.end(),
-								[](minion const& ally) { return ally.stats.alive(); });
-							if (leftmost_living != allies.end()) {
-								take_damage_from(leftmost_living, source->golden ? 6 : 3, source);
-							}
-							break;
+			// Trigger overkill effects if applicable.
+			if (can_overkill && lose_health_result == lose_health_result::overkilled) {
+				switch (source->id) {
+					case id::herald_of_flame: {
+						// Deal damage to left-most living minion in the target's warband.
+						report_trigger(*source);
+						auto const leftmost_living = std::find_if( //
+							allies.begin(),
+							allies.end(),
+							[](minion const& ally) { return ally.stats.alive(); });
+						if (leftmost_living != allies.end()) {
+							take_damage_from(leftmost_living, source->golden ? 6 : 3, source);
 						}
-						case id::ironhide_direhorn: {
-							report_trigger(*source);
-							summon(enemies, std::next(source), create(id::ironhide_runt, source->golden), enemies, {});
-							break;
-						}
-						default:
-							// No overkill effects.
-							break;
+						break;
 					}
+					case id::ironhide_direhorn: {
+						report_trigger(*source);
+						summon(enemies, std::next(source), create(id::ironhide_runt, source->golden), enemies, {});
+						break;
+					}
+					default:
+						// No overkill effects.
+						break;
 				}
 			}
-			if (!target->stats.alive()) {
-				// Trigger on-kill effects.
+			// Trigger on-kill effects if target died.
+			if (lose_health_result != lose_health_result::survived) {
 				for (auto it = enemies.begin(); it != enemies.end(); ++it) {
 					if (it->id == id::waxrider_togwaggle && get_tribe(*source) == tribe::dragon) {
 						report_trigger(*it);
