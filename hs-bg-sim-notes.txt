@@ -1,0 +1,37 @@
+hs-bg-sim mechanics issues/questions
+
+If a DS to the left of a holy mackerel are both hit by a cleave, does holy mackerel get shielded before taking damage?
+	I don't think so, and here's why. I have witnessed two mackerels both with DS get cleaved, and then both got DS back. That implies that the on-lose-divine shield effect needs to happen in a batch.
+
+Should add support for string input
+	For minion names, create a list of no-punctuation, lowercase strings and ids. If the input string stripped of punctuation and set to lowercase is contained in a list entry, it's a candidate. If there's exactly one candidate, done. Break ties by shortest list entry first (e.g. "imp" takes precedence over "impmama" for input string "imp"). If it's still a tie, report an ambiguity error.
+
+Minions that need support still
+	Khadgar
+		Reborn is not supposed to work with khadgar
+		Reborn should trigger after all DRs
+		Khadgar should summon the *buffed* version of stuff under certain circumstances, e.g. when to the right of a mama bear
+			This can result in a pattern like 6/6, 11/11, 6/6, 11/11, etc.
+			This implies that on-summon effects MAY occur before Khadgar's effect does, probably contingent on positioning...
+	Dire wolf alpha
+		This is going to be tricky because it's positional. Will need to carefully update this aura every time a minion is added or removed.
+	Red Whelp
+
+Some orderings are certainly wrong right now, but I don't know the correct ordering
+	All death resolution is allies-then-enemies
+	Probably others...
+
+Support hero powers
+
+Make sure that cleave chooses targets before dealing damage so that e.g. imp gang boss's imps can't be hit by the same attack that spawned them
+	Also, herald of flame's overkill can't hit spawned imps
+
+Write unit tests for all the weird interactions
+	Set up a deterministic board state and then check the result of one simulation (avoid probabilistic outcomes)
+
+Note: Who attacks first is determined BEFORE the start-of-game phase
+	I know this because I have seen a single minion attack two minions first, after its comrade died
+
+Check screen shot on phone - has some stuff about turn orders
+
+Note: Red whelp order is definitely not chosen by who has the most red whelps. It may be based on total minion count, but not sure.

@@ -76,7 +76,7 @@ auto murlocs_vs_dragons(int n_trials = 1'000'000) -> void {
 		warband{//
 			create(id::nadina_the_red),
 			create(id::twilight_emissary, true).with_stats({39, 41}),
-			create(id::razoregore_the_untamed).with_stats({79, 81}),
+			create(id::razorgore_the_untamed).with_stats({79, 81}),
 			create(id::cobalt_guardian, true).with_stats({28, 32}),
 			create(id::kalecgos_arcane_aspect).with_stats({25, 33}),
 			create(id::zoobot).with_stats({4, 5}),
@@ -120,10 +120,28 @@ auto demons_vs_exodia(int n_trials = 100'000) {
 	pretty_print(simulate(board, n_trials));
 }
 
+auto big_pogo(int n_trials = 1'000'000) {
+	auto make_board = [](int health) {
+		return board{//
+			warband{//
+				create(id::pogo_hopper, true).with_stats({166, health})},
+			warband{//
+				create(id::nadina_the_red),
+				create(id::cobalt_scalebane).with_stats({7, 7}),
+				create(id::herald_of_flame).with_stats({14, 12}),
+				create(id::drakonid_enforcer),
+				create(id::hangry_dragon, true).with_stats({29, 20}),
+				create(id::razorgore_the_untamed).with_stats({46, 42}),
+				create(id::waxrider_togwaggle).with_stats({5, 4})}};
+	};
+	for (int health = 166; health <= 227; ++health) {
+		auto const results = simulate(make_board(health), n_trials);
+		fmt::print("{}\t{}\t{}\t{}\n", health, results.win_rate(), results.draw_rate(), results.loss_rate());
+	}
+}
+
 auto main() -> int {
 	fuzz_test();
-	demons_vs_exodia();
-	too_many_minions_test();
 
 	return 0;
 }

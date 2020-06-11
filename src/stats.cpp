@@ -17,8 +17,11 @@ namespace hsbg {
 	auto stats::set_health(int health) -> void {
 		_max_health = std::max(0, health);
 		_health = _max_health;
-		if (alive() && _health <= 0) { _liveness = liveness::marked_for_death; }
-		maybe_resurrect();
+		if (alive() && _health <= 0) {
+			_liveness = liveness::marked_for_death;
+		} else {
+			maybe_resurrect();
+		}
 	}
 	auto stats::set_attack(int attack) -> void {
 		_attack = std::max(0, attack);

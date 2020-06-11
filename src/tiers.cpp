@@ -109,7 +109,7 @@ namespace hsbg {
 			case id::malganis:
 			case id::murozond:
 			case id::primalfin_lookout:
-			case id::razoregore_the_untamed:
+			case id::razorgore_the_untamed:
 			case id::sneeds_old_shredder:
 			case id::strongshell_scavenger:
 			case id::voidlord:

@@ -196,7 +196,7 @@ namespace hsbg {
 				return "Murozond";
 			case id::primalfin_lookout:
 				return "Primalfin Lookout";
-			case id::razoregore_the_untamed:
+			case id::razorgore_the_untamed:
 				return "Razoregore, the Untamed";
 			case id::sneeds_old_shredder:
 				return "Sneed's Old Shredder";

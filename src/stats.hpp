@@ -45,7 +45,7 @@ namespace hsbg {
 		liveness _liveness = liveness::alive;
 		bool _poisoned = false;
 
-		/// Marks alive if not poisoned and health is positive. Should be called whenever health is restored.
+		/// Marks alive if not poisoned and health is positive. Should be called whenever health is potentially increased.
 		auto maybe_resurrect() -> void;
 	};
 }

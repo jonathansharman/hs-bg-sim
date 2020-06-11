@@ -147,7 +147,7 @@ namespace hsbg {
 		minion{id::malganis, {9, 7}},
 		minion{id::murozond, {5, 5}},
 		minion{id::primalfin_lookout, {3, 2}},
-		minion{id::razoregore_the_untamed, {2, 4}},
+		minion{id::razorgore_the_untamed, {2, 4}},
 		minion{id::sneeds_old_shredder, {5, 7}},
 		minion{id::strongshell_scavenger, {2, 3}},
 		minion{id::voidlord, {3, 9}}.with_taunt(),

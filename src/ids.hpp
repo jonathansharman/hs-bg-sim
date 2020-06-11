@@ -103,7 +103,7 @@ namespace hsbg {
 		malganis,
 		murozond,
 		primalfin_lookout,
-		razoregore_the_untamed,
+		razorgore_the_untamed,
 		sneeds_old_shredder,
 		strongshell_scavenger,
 		voidlord,

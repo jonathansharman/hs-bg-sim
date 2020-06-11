@@ -525,7 +525,7 @@ namespace hsbg {
 					id::king_bagurgle,
 					id::murozond,
 					id::malganis,
-					id::razoregore_the_untamed,
+					id::razorgore_the_untamed,
 					id::foe_reaper_4000,
 					id::kalecgos_arcane_aspect,
 					id::maexxna,

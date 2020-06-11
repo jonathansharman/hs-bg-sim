@@ -121,7 +121,7 @@ namespace hsbg {
 			case id::herald_of_flame:
 			case id::kalecgos_arcane_aspect:
 			case id::murozond:
-			case id::razoregore_the_untamed:
+			case id::razorgore_the_untamed:
 			case id::red_whelp:
 			case id::steward_of_time:
 			case id::twilight_emissary:
